@@ -202,21 +202,21 @@ ConcurrentHashMap 在 JDK 1.7 时使用的是数据加链表的形式实现的�
 
    ②判定web应用类型是否存在并默认为servlet
 
-   ③确定web服务器后就要加载初始化类了，这里是通过META-INFO/spring.factories来读取启动注册初始化器、应用上下文初始化器、应用监听器三类配置，当然，这里也可以对自定义三类配置
+   ③确定web服务器后就要加载初始化类了，这里是通过META-INFO/`spring.factories`来读取**启动注册初始化器**、**应用上下文初始化器**、**应用监听器**三类配置，当然，这里也可以对自定义三类配置
 
    ④通过运行时栈判断main方法所在的类是否为主启动类
 
 3. 调用run方法进入`环境准备阶段`，主要是对容器和组件做一些前置操作。
 
-   ①先创建一个启动上下文。并逐一调用刚刚加载的启动注册初始化器的一个初始化方法	
+   ①先创建一个启动上下文。并逐一调用刚刚加载的**启动注册初始化器的一个初始化方法	**
 
-   ②接下来设置awt.headLess=true表示缺少显示器、键盘等设备也可正常启动	
+   ②接下来设置**awt.headLess=true**表示缺少显示器、键盘等设备也可正常启动	
 
-   ③启动运行监听器，同时发布启动事件，获取并加载spring.factories中的事件发布运行监听器，并且会将应用监听器也一并引入，以后想要在启动流程过程中加入自定义逻辑就只需要监听这些事件	
+   ③**启动运行监听器**，同时发布启动事件，获取并加载spring.factories中的事件发布运行监听器，并且会将应用监听器也一并引入，以后想要在启动流程过程中加入自定义逻辑就只需要监听这些事件	
 
-   ④通过prepareEnvironment方法组装启动参数，根据不同的web构造不同的环境。构造完毕后会加载环境变量、jvm系统属性到属性集合中，后期无需加载。此时可设置启动参数并添加configuration.properties到属性集合中。接下来会发布环境准备完成的事件，一些监听器收到信号会做相应处理。
+   ④**通过prepareEnvironment方法组装启动参数**，根据不同的web构造不同的环境。构造完毕后会加载环境变量、jvm系统属性到属性集合中，后期无需加载。此时可设置启动参数并添加configuration.properties到属性集合中。接下来会发布环境准备完成的事件，一些监听器收到信号会做相应处理。
 
-   ⑤可做忽略元数据加载、打印banner的操作。
+   ⑤可做**忽略元数据加载**、**打印banner**的操作。
 
 4. 环境准备好以后，就可以`创建容器`了。
 
@@ -250,9 +250,43 @@ ConcurrentHashMap 在 JDK 1.7 时使用的是数据加链表的形式实现的�
 3. 销毁
    - 销毁前处理器PostProcessBeforeDestruction，会执行Bean中@PreDestory注解的方法；
 
-----
+---
+
+`实例化Bean`->`Bean属性填充`->`初始化Bean`->`销毁Bean`
+
+1. **反射创建Bean对象**
+
+   - 通过loadBeanDefinitions方法，用xml，注解扫描等方式，`找到定义的Bean`，存入beanDefinitionMap（Bean定义集合）中
+
+   - **遍历**Bean定义**集合**，**创建bean**，createBean()
+
+     - 通过反射机制，使用构造器创建
+
+       
+
+2. **属性填充**，注入这个Bean依赖的其他Bean对象
+
+   - 三级缓存，依赖注入
+
+3. **初始化Bean**
+
+   - **执行Aware接口的方法**，可以通过接口获取BeanName，BeanFactory
+   - **执行BeanPostProcessor的前置处理方法**postProcessBeforeInitialization，对Bean进行一些中自定义的前置处理
+   - **判断Bean是否实现了InitializingBean接口**，执行InitializationBean的afterPropertiesSet（）初始化方法
+   - **执行用户自定义的初始化方法**，如init-method
+   - **执行BeanPostProcessor的后置处理方法**，postProcessAfterInitialization（）
+
+4. 不需要时销毁
+
+   - 执行**后置处理器**的**回调**方法
+   - 判断是否实现了**DisposableBean接口**，调用**destory**（）方法
+   - 判断是否配置了destroy-method等**自定义的销毁**方法，执行
 
 
+
+
+
+---
 
 > 说说Bean的作用域,以及默认的作用域
 
@@ -332,7 +366,14 @@ ioc容器的启动主要在refresh（）实现
 
 `@Before` `@After` `@AfterReturning` `@AfterThrowing` `@Around`
 
-### 事物
+AOP是面向切面编程，它是一种编程思想，它是一种通过预编译方式和运行期间动态代理的方式实现不修改源代码的情况下给程序动态添加功能的一种技术，可以降低代码的耦合度，便于管理，提高代码的可重用性。
+
+ AOP的实现方式有两种： 
+
+- JDK动态代理，可以在运行时创建接口的代理实例。 
+- CGLIB动态代理：可以在运行期间创建子类的动态实例。 AOP的应用场景有：事务，日志管理等。
+
+### 事务
 
 > 说说Spring事务管理
 
