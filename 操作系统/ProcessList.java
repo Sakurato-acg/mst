@@ -1,31 +1,41 @@
+package æ“ä½œç³»ç»Ÿ;
+
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ProcessList {
-    public static void main(String[] args) {
+    public static Map<String, String> getList()  {
         try {
-            // »ñÈ¡ÄÚ´æÖĞÔËĞĞ½ø³ÌÁĞ±í
+            // è·å–å†…å­˜ä¸­è¿è¡Œè¿›ç¨‹åˆ—è¡¨
             Process process = Runtime.getRuntime().exec("tasklist.exe /fo csv /nh");
 
-            // ¶ÁÈ¡½ø³ÌÁĞ±íÊä³ö
+            // è¯»å–è¿›ç¨‹åˆ—è¡¨è¾“å‡º
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String line = reader.readLine() ;//¶ÁÈ¡µÚ1ĞĞ
+            String line = reader.readLine();//è¯»å–ç¬¬1è¡Œ
+
+            Map<String, String> map = new HashMap<>();
+
             while (line != null) {
-                // ·Ö¸î½ø³ÌÃûºÍ½ø³ÌID
-            	String [] parts = line.split(",");
-            	String name = parts[0].replaceAll("\"", "");
-            	String pid = parts[1].replaceAll("\"", "");
+                // åˆ†å‰²è¿›ç¨‹åå’Œè¿›ç¨‹ID
+                String[] parts = line.split(",");
+                String name = parts[0].replaceAll("\"", "");
+                String pid = parts[1].replaceAll("\"", "");
 
-                // Êä³ö½ø³ÌµÄĞÅÏ¢
-                System.out.println("Process Name: " + name);
-                System.out.println("Process ID: " + pid);
-                System.out.println();
-
-                // ¶ÁÈ¡ÏÂÒ»ĞĞ
+                // è¾“å‡ºè¿›ç¨‹çš„ä¿¡æ¯
+//                System.out.println("Process Name: " + name);
+//                System.out.println("Process ID: " + pid);
+//                System.out.println();
+                map.put(name, pid);
+                // è¯»å–ä¸‹ä¸€è¡Œ
                 line = reader.readLine();
             }
-        } catch (Exception e) {
+            return map;
+        } catch (IOException e) {
             e.printStackTrace();
         }
+        return null;
     }
 }

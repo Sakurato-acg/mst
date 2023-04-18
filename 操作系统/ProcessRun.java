@@ -1,9 +1,10 @@
+package 鎿嶄綔绯荤粺;
+
 import java.io.IOException;
 
 public class ProcessRun {
-    public static void main(String[] args) {
-        try {
-            // 运行记事本进程
+    public static void create() {
+        try{
             Runtime.getRuntime().exec("notepad.exe");
         } catch (IOException e) {
             e.printStackTrace();
