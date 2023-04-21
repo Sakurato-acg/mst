@@ -38,6 +38,9 @@ ps -ef | grep adt: 显示进程
 tree 目录: 树状显示目录结构
 
 netstat -anp|more: 查看端口/协议
+
+wc -l : 统计数量
+xargs : 显示文件行数
 ```
 
 ---
@@ -340,6 +343,7 @@ which : 指令的目录
 grep -i main hello.java: 过滤查找
 -i: 忽略字幕大小写
 -n: 显示匹配行，行号
+-r: 递归查找文件，包括文件里的
 cat hello.java | grep main 
 ```
 
@@ -426,6 +430,9 @@ chowm -R tom /home/test
 
 #修改文件所在组
 将/home/test目录下所有文件和目录的所在组而改成shaolin: chowm -R shaolin /home/test
+
+#
+文件的修改取决于文件是否有w权限，文件的删除取决于所属目录是否有w权限。谨记
 ```
 
 ## 定时任务
@@ -593,6 +600,7 @@ firewall-cmd --permanent --add-port=端口号/协议 : 打开端口
 firewall-cmd --permanent --remove-port=端口号/协议 : 关闭端口
 firewall-cmd --reload: 重新载入，才能生效
 firewall-cmd --query-port=端口/协议 : 查询端口是否开放
+firewall-cmd --list-ports: 查看已经放开的端口
 ```
 
 ---
@@ -978,3 +986,69 @@ restore -C -f /opt/book.bak.bz2
 ```
 
 ![image-20230420151947378](picture/image-20230420151947378.png)
+
+---
+
+# Linux可视化管理
+
+## webmin
+
+![image-20230420165132138](picture/image-20230420165132138.png)
+
+![image-20230420170012457](picture/image-20230420170012457.png)
+
+![image-20230420165927702](picture/image-20230420165927702.png)
+
+## 宝塔
+
+![image-20230421135304230](picture/image-20230421135304230.png)
+
+![image-20230421140635941](picture/image-20230421140635941.png)
+
+```properties
+bt default:查看用户信息
+```
+
+---
+
+# 面试题
+
+## cut awt sort uniq
+
+![image-20230421145944396](picture/image-20230421145944396.png)
+
+![image-20230421150035280](picture/image-20230421150035280.png)
+
+![image-20230421150122770](picture/image-20230421150122770.png)
+
+![image-20230421150921566](picture/image-20230421150921566.png)
+
+---
+
+## 找回mysql root密码
+
+```mysql
+vim /rtc/my.cnf
+插入 skip-grant-tables
+service mysqld restart 
+
+use mysql;
+update user set authentication_string=password("210019") while user='root';
+
+flush privileges;
+
+
+
+```
+
+## 其他
+
+> ![image-20230421153317818](picture/image-20230421153317818.png)
+
+![image-20230421153719377](picture/image-20230421153719377.png)
+
+> <img src="picture/image-20230421153751532.png" alt="image-20230421153751532" style="zoom:80%;" />
+
+![image-20230421154111019](picture/image-20230421154111019.png)
+
+![image-20230421164142303](picture/image-20230421164142303.png)
