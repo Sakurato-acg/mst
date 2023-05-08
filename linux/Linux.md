@@ -379,7 +379,7 @@ tar -zcvf pc.tar.gz /home/pig.txt /home/cat.txt
 tar -zxvf pc.tar.gz -C /opt/tmp2
 
 压缩:tar -zcvf 压缩包名.tar.gz 要打包的文件1 文件2...
-解压:tar -zxvf 要解压的压缩包路径 解压路径
+解压:tar -zxvf 要解压的压缩包路径 -C 解压路径
 ```
 
 ## 组管理与权限管理
@@ -671,14 +671,20 @@ yum install xxx: 下载安装
 
 ## 安装环境
 
+### java
+
 <img src="picture/image-20230418220522512.png" alt="image-20230418220522512" style="zoom:67%;" />
+
+[(25条消息) Linux centos7安装java开发环境JDK16_java16_na小子叫坚强的博客-CSDN博客](https://blog.csdn.net/weixin_46078890/article/details/115221389)
 
  没javac变量配置无误后运行yum install java-1.8.0-openjdk-devel
 
 <img src="picture/image-20230418223058435.png" alt="image-20230418223058435" style="zoom:67%;" />
 
-> mysql
->
+
+
+### mysql
+
 > [(24条消息) Linux yum安装MySQL 8.0_Kathyao的博客-CSDN博客](https://blog.csdn.net/yjj_xss/article/details/104931808)
 >
 > 远程登录
@@ -688,6 +694,10 @@ yum install xxx: 下载安装
 > [(24条消息) mysql远程连接错误：2059 、2003_風の住む街~的博客-CSDN博客](https://blog.csdn.net/weixin_38924500/article/details/105436590#:~:text=Navicat连接云服务器上的 mysql 数据库出现 2059 的 错误 代码提示 远程连接,mysql -uroot -p 2、更改访问 mysql 服务器的用户权限 alter user)
 >
 > <img src="picture/image-20230419134411106.png" alt="image-20230419134411106" style="zoom:67%;" />
+
+### redis
+
+![image-20230426173319841](picture/image-20230426173319841.png)
 
 # Shell
 
@@ -1052,3 +1062,21 @@ flush privileges;
 ![image-20230421154111019](picture/image-20230421154111019.png)
 
 ![image-20230421164142303](picture/image-20230421164142303.png)
+
+---
+
+# 项目部署
+
+## 手动部署
+
+1. 上传jar包
+
+2. mysql -u2120400146 -h 192.168.6.1 -p 
+
+3. 后台运行springboot
+
+   ![image-20230425120833570](picture/image-20230425120833570.png)
+
+## 自动部署
+
+git 
