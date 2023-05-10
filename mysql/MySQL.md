@@ -849,6 +849,43 @@ commit;
 `SET [ SESSION | GLOBAL ] TRANSACTION ISOLATION LEVEL {READ UNCOMMITTED | READ COMMITTED | REPEATABLE READ | SERIALIZABLE };`
 SESSION 是会话级别，表示只针对当前会话有效，GLOBAL 表示对所有会话有效
 
+
+
+## 视图
+
+> 介绍
+
+<img src="picture/image-20230510172653226.png" alt="image-20230510172653226" style="zoom:67%;margin:0;border:5px solid #e89000" />
+
+> 使用
+
+```mysql
+#创建
+create [or replace] view 视图名称 as select id,name from student where id<10;
+
+#查询
+select * from 视图名称;
+
+#修改
+alter view 视图名称 as select .....;
+
+#删除
+drop view 视图名称;
+
+#视图插入数据 --> 原表增加了一条数据
+
+#原表新增一条数据 --> 视图不会动态更新
+
+#视图数据时会检查数据 id要<10 
+create 语句 check option
+```
+
+<img src="picture/image-20230510173210793.png" alt="image-20230510173210793" style="zoom:50%;margin:0;border:5px solid #e89000" />
+
+> 更新
+
+<img src="picture/image-20230510183947171.png" alt="image-20230510183947171" style="zoom:80%;margin:0;border:3px solid #e89000" />
+
 # 进阶篇
 
 
@@ -995,20 +1032,37 @@ profiling 默认关闭，可以通过set语句在session/global级别开启 prof
 ### explain
 
 EXPLAIN 或者 DESC 命令获取 MySQL 如何执行 SELECT 语句的信息，包括在 SELECT 语句执行过程中表如何连接和连接的顺序。
-语法：
-	# 直接在select语句之前加上关键字 explain / desc
-	EXPLAIN SELECT 字段列表 FROM 表名 HWERE 条件;
 
-EXPLAIN 各字段含义：
+> 语法：
+>  直接在select语句之前加上关键字 explain / desc
+> ​	EXPLAIN SELECT 字段列表 FROM 表名 HWERE 条件;
 
-- id：select 查询的序列号，表示查询中执行 select 子句或者操作表的顺序（id相同，执行顺序从上到下；id不同，值越大越先执行）
-- select_type：表示 SELECT 的类型，常见取值有 SIMPLE（简单表，即不适用表连接或者子查询）、PRIMARY（主查询，即外层的查询）、UNION（UNION中的第二个或者后面的查询语句）、SUBQUERY（SELECT/WHERE之后包含了子查询）等
-- type：表示连接类型，性能由好到差的连接类型为 NULL、system、const、eq_ref、ref、range、index、all
-- possible_key：可能应用在这张表上的索引，一个或多个
-- Key：实际使用的索引，如果为 NULL，则没有使用索引
-- Key_len：表示索引中使用的字节数，该值为索引字段最大可能长度，并非实际使用长度，在不损失精确性的前提下，长度越短越好
-- rows：MySQL认为必须要执行的行数，在InnoDB引擎的表中，是一个估计值，可能并不总是准确的
-- filtered：表示返回结果的行数占需读取行数的百分比，filtered的值越大越好
+> EXPLAIN 各字段含义：
+
+- `id`：`select 查询的序列号`，表示查询中执行 select 子句或者操作表的顺序（id相同，执行顺序从上到下；id不同，`值越大越先执行`）
+
+- `select_type`：`表示 SELECT 的类型`，常见取值有 SIMPLE（简单表，即不适用表连接或者子查询）、PRIMARY（主查询，即外层的查询）、UNION（UNION中的第二个或者后面的查询语句）、SUBQUERY（SELECT/WHERE之后包含了子查询）等
+
+- `type`：`表示连接类型`，性能由好到差的连接类型为 NULL、system、const、eq_ref、ref、range、index、all
+
+  ```properties
+  NULL:不查询表
+  system:访问系统表
+  const:通过主键或唯一索引
+  ref:非唯一索引
+  ```
+
+  
+
+- `possible_key`：可能应用在这张表上的`索引`，一个或多个
+
+- `Key`：`实际使用的索引`，如果为 NULL，则没有使用索引
+
+- `Key_len`：表示索引中使用的字节数，该值为索引字段最大可能长度，并非实际使用长度，在不损失精确性的前提下，长度越短越好
+
+- `rows`：MySQL认为必须要执行的行数，在InnoDB引擎的表中，是一个估计值，可能并不总是准确的
+
+- `filtered`：表示返回结果的行数占需读取行数的百分比，filtered的值越大越好
 
 ## 索引
 
@@ -1189,11 +1243,35 @@ drop index idx_user_email on tb_user;
 
 联合索引中，出现范围查询（<, >），范围查询右侧的列索引失效。可以用>=或者<=来规避索引失效问题。
 
+![image-20230510134424107](picture/image-20230510134424107.png)
+
+符合情况：
+
+![image-20230510134815227](picture/image-20230510134815227.png)
+
+不符合的情况
+
+![image-20230510135024335](picture/image-20230510135024335.png)
+
+> 成功：
+>
+> ​	只要最左边存在索引即可
+>
+> 失效：
+>
+> ​	不按顺序，则后面的索引失效
+>
+> ​	范围查询（>,<）后的索引失效
+>
+> **与书写顺序无关**
+
+
+
 #### 索引失效情况
 
-1. 在索引列上进行运算操作，索引将失效。如：`explain select * from tb_user where substring(phone, 10, 2) = '15';`
-2. 字符串类型字段使用时，不加引号，索引将失效。如：`explain select * from tb_user where phone = 17799990015;`，此处phone的值没有加引号
-3. 模糊查询中，如果仅仅是尾部模糊匹配，索引不会是失效；如果是头部模糊匹配，索引失效。如：`explain select * from tb_user where profession like '%工程';`，前后都有 % 也会失效。
+1. **在索引列上进行运算操作，索引将失效。**如：`explain select * from tb_user where substring(phone, 10, 2) = '15';`
+2. 字符串类型字段使用时，**不加引号**，索引将失效。如：`explain select * from tb_user where phone = 17799990015;`，此处phone的值没有加引号
+3. 模糊查询中，如果仅仅是尾部模糊匹配，索引不会是失效；如果是**头部模糊匹配**，索引失效。如：`explain select * from tb_user where profession like '%工程';`，**前后都有 % 也会失效**。
 4. 用 or 分割开的条件，如果 or 其中一个条件的列没有索引，那么涉及的索引都不会被用到。
 5. 如果 MySQL 评估使用索引比全表更慢，则不使用索引。
 
@@ -1212,18 +1290,20 @@ use 是建议，实际使用哪个索引 MySQL 还会自己权衡运行速度去
 
 #### 覆盖索引&回表查询
 
-尽量使用覆盖索引（查询使用了索引，并且需要返回的列，在该索引中已经全部能找到），减少 select *。
+> 尽量使用覆盖索引（查询使用了索引，并且需要返回的列，在该索引中已经全部能找到），减少 select *。
 
 explain 中 extra 字段含义：
-`using index condition`：查找使用了索引，但是需要回表查询数据
-`using where; using index;`：查找使用了索引，但是需要的数据都在索引列中能找到，所以不需要回表查询
+	`using index condition`：查找使用了索引，但是需要回表查询数据
+	`using where; using index;`：查找使用了索引，但是需要的数据都在索引列中能找到，所以不需要回表查询
+
+> <img src="picture/image-20230510144906368.png" alt="image-20230510144906368" style="zoom: 67%;" />
 
 如果在聚集索引中直接能找到对应的行，则直接返回行数据，只需要一次查询，哪怕是select \*；如果在辅助索引中找聚集索引，如`select id, name from xxx where name='xxx';`，也只需要通过辅助索引(name)查找到对应的id，返回name和name索引对应的id即可，只需要一次查询；如果是通过辅助索引查找其他字段，则需要回表查询，如`select id, name, gender from xxx where name='xxx';`
 
 所以尽量不要用`select *`，容易出现回表查询，降低效率，除非有联合索引包含了所有字段
 
-面试题：一张表，有四个字段（id, username, password, status），由于数据量大，需要对以下SQL语句进行优化，该如何进行才是最优方案：
-`select id, username, password from tb_user where username='itcast';`
+> 面试题：一张表，有四个字段（id, username, password, status），由于数据量大，需要对以下SQL语句进行优化，该如何进行才是最优方案：`select id, username, password from tb_user where username='itcast';`
+>
 
 解：给username和password字段建立联合索引，则不需要回表查询，直接覆盖索引
 
@@ -1250,6 +1330,8 @@ show index 里面的sub_part可以看到接取的长度
 单列索引情况：
 `explain select id, phone, name from tb_user where phone = '17799990010' and name = '韩信';`
 这句只会用到phone索引字段
+
+<img src="picture/image-20230510152502015.png" alt="image-20230510152502015" style="zoom:67%;border:5px solid #e89000" />
 
 ##### 注意事项
 
@@ -1290,12 +1372,13 @@ load data local infile '/root/sql1.log' into table 'tb_user' fields terminated b
 
 ### 主键优化
 
-数据组织方式：在InnoDB存储引擎中，表数据都是根据主键顺序组织存放的，这种存储方式的表称为索引组织表（Index organized table, IOT）
+**数据组织方式**：在InnoDB存储引擎中，表数据都是根据主键顺序组织存放的，这种存储方式的表称为索引组织表（Index organized table, IOT）
 
-页分裂：页可以为空，也可以填充一般，也可以填充100%，每个页包含了2-N行数据（如果一行数据过大，会行溢出），根据主键排列。
-页合并：当删除一行记录时，实际上记录并没有被物理删除，只是记录被标记（flaged）为删除并且它的空间变得允许被其他记录声明使用。当页中删除的记录到达 MERGE_THRESHOLD（默认为页的50%），InnoDB会开始寻找最靠近的页（前后）看看是否可以将这两个页合并以优化空间使用。
+**页分裂**：页可以为空，也可以填充一般，也可以填充100%，每个页包含了2-N行数据（如果一行数据过大，会行溢出），根据主键排列。
 
-MERGE_THRESHOLD：合并页的阈值，可以自己设置，在创建表或创建索引时指定
+**页合并**：当删除一行记录时，实际上记录并没有被物理删除，只是记录被标记（flaged）为删除并且它的空间变得允许被其他记录声明使用。当页中删除的记录到达 MERGE_THRESHOLD（默认为页的50%），InnoDB会开始寻找最靠近的页（前后）看看是否可以将这两个页合并以优化空间使用。
+
+**MERGE_THRESHOLD**：合并页的阈值，可以自己设置，在创建表或创建索引时指定
 
 > 文字说明不够清晰明了，具体可以看视频里的PPT演示过程：https://www.bilibili.com/video/BV1Kr4y1i7ru?p=90
 
@@ -1311,9 +1394,11 @@ MERGE_THRESHOLD：合并页的阈值，可以自己设置，在创建表或创�
 1. Using filesort：通过表的索引或全表扫描，读取满足条件的数据行，然后在排序缓冲区 sort buffer 中完成排序操作，所有不是通过索引直接返回排序结果的排序都叫 FileSort 排序
 2. Using index：通过有序索引顺序扫描直接返回有序数据，这种情况即为 using index，不需要额外排序，操作效率高
 
+---
+
 如果order by字段全部使用升序排序或者降序排序，则都会走索引，但是如果一个字段升序排序，另一个字段降序排序，则不会走索引，explain的extra信息显示的是`Using index, Using filesort`，如果要优化掉Using filesort，则需要另外再创建一个索引，如：`create index idx_user_age_phone_ad on tb_user(age asc, phone desc);`，此时使用`select id, age, phone from tb_user order by age asc, phone desc;`会全部走索引
 
-总结：
+> 总结：
 
 - 根据排序字段建立合适的索引，多字段排序时，也遵循最左前缀法则
 - 尽量使用覆盖索引
@@ -1373,6 +1458,14 @@ InnoDB 的行锁是针对索引加的锁，不是针对记录加的锁，并且�
 如以下两条语句：
 `update student set no = '123' where id = 1;`，这句由于id有主键索引，所以只会锁这一行；
 `update student set no = '123' where name = 'test';`，这句由于name没有索引，所以会把整张表都锁住进行数据更新，解决方法是给name字段添加索引
+
+### 总结
+
+<img src="picture/image-20230510172059710.png" alt="image-20230510172059710" style="zoom: 67%;margin:0" />
+
+
+
+---
 
 # 数据类型
 
