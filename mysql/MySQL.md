@@ -886,6 +886,54 @@ create 语句 check option
 
 <img src="picture/image-20230510183947171.png" alt="image-20230510183947171" style="zoom:80%;margin:0;border:3px solid #e89000" />
 
+## 触发器
+
+> 介绍
+
+![image-20230511121738235](picture/image-20230511121738235.png)
+
+- 保证数据的完整性
+- 日志记录
+- 数据校验
+
+![image-20230511121926742](picture/image-20230511121926742.png)
+
+> 使用
+
+```mysql
+#创建
+create trigger trigger_name
+before / after    insert / update / delete
+on table_name for each row #行级触发器
+begin
+	tigger_stmt
+end;
+
+
+#查看
+show triggers;
+
+#删除
+drop trigger [datebase_name] trigger_name;
+
+```
+
+![image-20230511122858735](picture/image-20230511122858735.png)
+
+```mysql
+create trigger user_insert
+after insert on user_logs for each row 
+begin
+	insert into user_logs values
+	(null,'insert', now() , new.id, 
+     concat(new.id +new.name +.......) );
+end;
+```
+
+
+
+
+
 # 进阶篇
 
 
@@ -1462,6 +1510,161 @@ InnoDB 的行锁是针对索引加的锁，不是针对记录加的锁，并且�
 ### 总结
 
 <img src="picture/image-20230510172059710.png" alt="image-20230510172059710" style="zoom: 67%;margin:0" />
+
+----
+
+## 锁
+
+### 概述
+
+​	锁是计算机协调多个进程或线程访问某一资源的机制。
+
+
+
+1. **全局锁**：锁定数据库中的所有表
+2. **表级锁**：每次操作锁住整张表
+3. **行级锁**：每次操作锁住对应的行数据
+
+### 全局锁
+
+​	**全局锁**就是对**整个数据库**实例加锁，加锁后处于**只读状态**，后续的DML的写语句，DDL语句，已经更新操作的事务提交语句都将被阻塞。
+
+​	**应用场景**：全库全库的逻辑备份，对所有的表进行锁定，从而获取一致性视图，保证是数据的完整性。
+
+<img src="picture/image-20230511132350912.png" alt="image-20230511132350912" style="zoom: 50%;margin:0;border:5px solid #d63200" />
+
+```mysql
+use sg_blog;
+
+#加锁
+flush tables with read lock;
+
+#备份 windows命令行
+mysqldump -u root -p 1234 db01 > D:/db01.sql
+
+#释放锁
+unlock tables;
+
+#还原
+mysql -u username -p password database <backup.sql
+```
+
+<img src="picture/image-20230511134053252.png" alt="image-20230511134053252" style="zoom: 67%;margin:0;border:5px solid #d63200" />
+
+### 表级锁
+
+> 介绍
+
+​	表级锁，每次操作锁住整张表。锁定粒度大，发生锁冲突的概率最高，并发度最低。
+
+#### 表锁
+
+- 表共享读锁(read lock)
+
+  - 多个事务同时访问，都能读，不能写
+
+  - 写：自己会失败，其他会阻塞
+
+    ```mysql
+    #加锁
+    lock table table_name read;
+    
+    #释放锁
+    unlock tables;
+    ```
+
+  - ![image-20230511155540672](picture/image-20230511155540672.png)
+
+- 表独占写锁(write lock)
+
+  - 不允许其他事务访问
+  - ![image-20230511155612854](picture/image-20230511155612854.png)
+
+
+![image-20230511153045136](picture/image-20230511153045136.png)
+
+#### 元数据锁（meta data lock，MDL）
+
+​	MDL加锁过程是系统自动控制，无需显式使用，在访问一张表的时候会自动加上。
+
+​	MDL锁主要作用是维护数据表`元数据`的数据一致性，在表上有事务时，不可以对元数据进行操作。
+
+![image-20230511160502230](picture/image-20230511160502230.png)
+
+#### 意向锁
+
+![image-20230511165343181](picture/image-20230511165343181.png)
+
+![image-20230511165514375](picture/image-20230511165514375.png)
+
+
+
+---
+
+### 行级锁
+
+行级锁，每次加锁操作锁住对应的行数据。
+
+锁定粒度最小，发生锁冲突概率最低，并发度最高。
+
+- **行锁（record lock）**：锁定单个记录的锁，防止其他事务对此进行update、delete
+  - <img src="picture/image-20230511171912736.png" alt="image-20230511171912736" style="zoom:67%;border:3px solid orange" />
+  - <img src="picture/image-20230511172123178.png" alt="image-20230511172123178" style="zoom:67%;border:3px solid orange" />
+- **间隙锁（gap lock）**：锁定索引记录间隙（不含该记录），确保索引记录间隙不变，防止其他事务在这个间隙进行insert，从而产生幻读。
+  - ![image-20230511171526149](picture/image-20230511171526149.png)
+
+- **临键锁（next-key lock）**：行锁与间隙锁的结合，同时锁住数据，并锁住数据前的间隙。
+
+![image-20230511175719729](picture/image-20230511175719729.png)
+
+### 查询锁状态
+
+![image-20230511173119861](picture/image-20230511173119861.png)
+
+---
+
+## InnoDB引擎
+
+### 逻辑存储结构
+
+![image-20230511192532844](../../../../AppData/Roaming/Typora/typora-user-images/image-20230511192532844.png)
+
+- `TableSpace(表空间)`
+
+  ​	ibd文件，一个mysql实例可以对应多个表空间，用于存储记录，索引等数据
+
+-  `Segment(段)` 
+		段，分为数据段，索引段，回滚段。
+  
+  ​	InnoDB是索引组织表，数据段就是B+树的叶子结点，索引段就是B+树的非叶子结点。段来管理多个区。
+
+
+
+- `Extent(区)` 
+
+  ​	表空间的单元结构，每个区的大小为1M。默认情况下，InnoDB存储引擎的页大小为16K，即一个区中一共有64个连续的页。
+
+- `Page(页)`
+
+  ​	页是引擎磁盘管理的最小单元，每个页的大小默认是16KB。为了保证页的连续性，InnoDB引擎每次从磁盘申请4-5个区。
+
+- `Row(行)`
+
+  ![image-20230511194547791](picture/image-20230511194547791.png)
+
+### 架构
+
+#### 内存架构
+
+![image-20230511195456827](picture/image-20230511195456827.png)
+
+
+
+### 事务原理
+
+### MVCC
+
+
 
 
 
