@@ -1658,11 +1658,104 @@ mysql -u username -p password database <backup.sql
 
 ![image-20230511195456827](picture/image-20230511195456827.png)
 
+![image-20230512120700356](picture/image-20230512120700356.png)
 
+> change buffer 详情看[MySQL各种“Buffer”之Change Buffer - 墨天轮 (modb.pro)](https://www.modb.pro/db/112469)
+
+<img src="picture/image-20230512124205281.png" alt="image-20230512124205281" style="zoom: 50%;margin:0;border:5px solid #e95f59" />
+
+<img src="picture/image-20230512124936670.png" alt="image-20230512124936670" style="zoom:50%;margin:0;border:5px solid #e95f59" />
+
+
+
+#### 磁盘结构
+
+<img src="picture/image-20230512131713329.png" alt="image-20230512131713329" style="zoom: 50%;margin:0;border:5px solid #e95f59" />
+
+<img src="picture/image-20230512132304980.png" alt="image-20230512132304980" style="zoom:50%;margin:0;border:5px solid #e95f59" />
+
+作用：自定义存储位置，数据离散的分布到多个磁盘并发读写提升效率
+
+<img src="picture/image-20230512132450798.png" alt="image-20230512132450798" style="zoom:50%;margin:0;border:5px solid #e95f59" />
+
+#### 后台线程
+<img src="picture/image-20230512133104581.png" alt="image-20230512133104581" style="zoom:50%;margin:0;border:5px solid #e95f59" />
 
 ### 事务原理
 
+> [5分钟精通数据库事务-ACID和三大问题_哔哩哔哩_bilibili](https://www.bilibili.com/video/BV1JG4y1Q7BX/?from=search&seid=13849132325093371743&spm_id_from=333.337.0.0&vd_source=a97555db7a704882626ff6b3dff1617c)
+
+#### 持久性
+
+redo log （物理日志 数据内容）
+
+<img src="picture/image-20230512134748986.png" alt="image-20230512134748986" style="zoom:50%;margin:0;border:5px solid #e95f59" />
+
+#### 原子性
+
+`undo log` 用于记录数据被修改前的信息，作用：回滚、MVCC（多版本并发控制）
+
+<img src="picture/image-20230512140502302.png" alt="image-20230512140502302" style="zoom: 67%;margin:0;border:5px solid #e95f59" />
+
 ### MVCC
+
+`多版本并发控制`
+
+#### 当前读
+
+<img src="picture/image-20230512141345221.png" alt="image-20230512141345221" style="zoom:80%;margin:0;border:3px solid #e95f59" />
+
+#### 快照读
+
+<img src="picture/image-20230512141408582.png" alt="image-20230512141408582" style="zoom:80%;margin:0;border:3px solid #e95f59" />
+
+#### MVCC
+
+指维护一个数据的多个版本，使得读写操作没有冲突，快照读为 mysql 实现 MVCC 功能提供了一个非阻塞读的功能。
+
+MVCC的具体实现，还依赖于数据库记录中的三个隐式字段，undo log日志，readView
+
+#### 实现原理
+
+<img src="picture/image-20230512142859637.png" alt="image-20230512142859637" style="zoom:67%;margin:0;border:5px solid #e95f59" />
+
+<img src="picture/image-20230512145432883.png" alt="image-20230512145432883" style="zoom: 67%;margin:0;border:5px solid #e95f59" />
+
+<img src="picture/image-20230512151935143.png" alt="image-20230512151935143" style="zoom:67%;margin:0;border:5px solid #e95f59" />
+
+<img src="picture/image-20230512151657737.png" alt="image-20230512151657737" style="zoom:50%;margin:0;border:5px solid #e95f59" />
+
+### mysql管理
+
+#### 系统数据库
+
+mysql安装后，自带四个数据库
+
+```properties
+mysql:存储mysql服务器正常运行所需要的各种信息（时区，主从，用户，权限等）
+
+information_schema:提供了访问数据库元数据的各种表和视图，包含数据库、表、字段类型、访问权限等
+
+performance_schema:为mysql服务器运行时状态提供了一个底层监控功能，主要用于收集数据库服务器性能参数
+
+sys:包含了一系列方便DBA和开发人员利用performance_schema性能数据库进行性能调优和诊断的视图
+```
+
+#### 工具
+
+- mysql 客户端
+
+  <img src="picture/image-20230512154800870.png" alt="image-20230512154800870" style="zoom: 50%;margin:0;border:5px solid #e95f59" />
+
+- <img src="picture/image-20230512155155507.png" alt="image-20230512155155507" style="zoom: 50%; margin: 0px; border: 5px solid rgb(233, 95, 89);" />
+
+- <img src="picture/image-20230512155640783.png" alt="image-20230512155640783" style="zoom: 50%;margin:0;border:5px solid #e95f59" />
+
+- <img src="picture/image-20230512155851966.png" alt="image-20230512155851966" style="zoom:50%;margin:0;border:5px solid #e95f59" />
+
+- <img src="picture/image-20230512160206738.png" alt="image-20230512160206738" style="zoom:50%;margin:0;border:5px solid #e95f59" />
+
+- <img src="picture/image-20230512160313944.png" alt="image-20230512160313944" style="zoom:50%;margin:0;border:5px solid #e95f59" />
 
 
 
