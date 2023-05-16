@@ -178,17 +178,31 @@ public class MyDatasource {
 
 #### 依赖项
 
-- Mybaitis Framework
+```xml
+ <dependency>
+     <groupId>org.mybatis.spring.boot</groupId>
+     <artifactId>mybatis-spring-boot-starter</artifactId>
+     <version>2.3.0</version>
+</dependency>
 
-- MySql Driver
+<dependency>
+    <groupId>com.github.pagehelper</groupId>
+    <artifactId>pagehelper-spring-boot-starter</artifactId>
+    <version>1.4.6</version>
+</dependency>
 
-- ```xml
-  <dependency>
-      <groupId>com.alibaba</groupId>
-      <artifactId>druid</artifactId>
-      <version>1.2.15</version>
-  </dependency>
-  ```
+<dependency>
+    <groupId>com.mysql</groupId>
+    <artifactId>mysql-connector-j</artifactId>
+    <scope>runtime</scope>
+</dependency>
+        
+<dependency>
+    <groupId>com.alibaba</groupId>
+    <artifactId>druid</artifactId>
+    <version>1.2.15</version>
+</dependency>
+```
 
 #### yml配置
 
@@ -202,21 +216,34 @@ spring:
     password: 210019
   main:
     banner-mode: off
-
+mybatis:
+  #实体类
+  type-aliases-package: com.itheima.pojo
+  #sql
+  mapper-locations: classpath:mapper/*Mapper.xml
+  configuration:
+    #驼峰命名
+    map-underscore-to-camel-case: true
+    
+    
+ pagehelper:
+  #配置四項 hprs
+  helper-dialect: mysql  #分页助手方言：mysql
+  params: count=countSql  #为了支持 startPage(Object params) 方法
+  support-methods-arguments: true  #支持通过 Mapper 接口参数来传递分页参数，默认值 false
+  reasonable: true #分页合理化参数，默认值为 false,页码不为负，不超总页码
 ```
 
 #### 使用
 
 ```java
 @Mapper
-/*
-@mapper的作用是可以给mapper接口自动生成一个实现类，让spring对mapper接口的bean进行管理，并且可以省略去写复杂的xml文件
-*/
 public interface BangumiMapper {
-    
-    @Select("select * from bangumi limit 0,5")
+
+    @Select("select id, name, type, time, status, year, picture, userId from bangumi limit 0,5")
     public List<Bangumi> getAll();
 
+    public List<Bangumi> test();
 }
 ```
 
@@ -224,26 +251,51 @@ public interface BangumiMapper {
 
 ### Mybatis-Plus
 
-#### 依赖项
+#### 快速开始
 
--  **MySql Driver**
+##### 初始化工程
 
- -  ```xml
-    <dependency>
-      	 <groupId>com.baomidou</groupId>
-      	 <artifactId>mybatis-plus-boot-starter</artifactId>
-      	 <version>3.4.1</version>
-    </dependency>
-    <dependency>
-        	<groupId>com.alibaba</groupId>
-        	<artifactId>druid</artifactId>
-        	<version>1.2.15</version>
-    </dependency>
+> 创建一个空的SpringBoot工程
+
+##### 添加依赖
+
+```xml
+<!--mybatisPlus依赖-->
+<dependency>
+    <groupId>com.baomidou</groupId>
+    <artifactId>mybatis-plus-boot-starter</artifactId>
+</dependency>
+
+<!--mysql数据库驱动-->
+<dependency>
+    <groupId>com.mysql</groupId>
+    <artifactId>mysql-connector-j</artifactId>
+</dependency>
+
+<dependency>
+    <groupId>com.alibaba</groupId>
+    <artifactId>druid-spring-boot-starter</artifactId>
+    <version>1.2.15</version>
+</dependency>
+
+<!--代码生成器-->
+<dependency>
+    <groupId>com.baomidou</groupId>
+    <artifactId>mybatis-plus-generator</artifactId>
+    <version>3.4.1</version>
+</dependency>
+
+<dependency>
+    <groupId>org.apache.velocity</groupId>
+    <artifactId>velocity-engine-core</artifactId>
+    <version>2.3</version>
+</dependency>
+```
+
+##### 配置
+
   ```properties
-
-#### yml
-
-```properties
+# yml
 spring:
   datasource:
     type: com.alibaba.druid.pool.DruidDataSource
@@ -262,146 +314,411 @@ mybatis-plus:
     banner: false
   ```
 
----
+```java
+@SpringBootApplication
+@MapperScan("com.baomidou.mybatisplus.samples.quickstart.mapper")
+//mapper层不用添加@Mapper
+//@Mapper自动实现***Mapper的实现类
+public class Application {
 
-## SSMP 整合
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
 
-### 配置
+}
+```
 
-#### 依赖
+#### 注解
 
-- Lombok
-
-- Spring Web
-
-- Mysql Driver
-
-- ```xml
-  <dependency>
-              <groupId>com.baomidou</groupId>
-              <artifactId>mybatis-plus-boot-starter</artifactId>
-              <version>3.4.1</version>
-  </dependency>
-  
-  <dependency>
-              <groupId>com.alibaba</groupId>
-              <artifactId>druid-spring-boot-starter</artifactId>
-              <version>1.2.15</version>
-              <scope>compile</scope>
-  </dependency>
-  
-  <!--代码生成器-->
-   <dependency>
-              <groupId>com.baomidou</groupId>
-              <artifactId>mybatis-plus-generator</artifactId>
-              <version>3.4.1</version>
-  </dependency>
-  
-  <!--模板生成引擎-->
-  <dependency>
-              <groupId>org.apache.velocity</groupId>
-              <artifactId>velocity-engine-core</artifactId>
-              <version>2.3</version>
-  </dependency>
-  ```
-
-  
-#### yml
-
-  ```properties
-  spring:
-    datasource:
-      type: com.alibaba.druid.pool.DruidDataSource
-      driver-class-name: com.mysql.cj.jdbc.Driver
-      url: jdbc:mysql://localhost:3306/mybatis?characterEncoding=utf8&useSSL=false&serverTimezone=UTC&rewriteBatchedStatements=true&nullCatalogMeansCurrent=true
-      username: root
-      password: 1234567890Qq
-    main:
-      banner-mode: off
-  # 开启mp的日志（输出到控制台）
-  mybatis-plus:
-    configuration:
-      log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
-      map-underscore-to-camel-case: false
-    global-config:
-      banner: false
-      #表前缀
-      db-config:
-        table-prefix: tb
-  
-
-  ```
-
----
-
-### 模板
+##### @TableName
 
 ```java
-/*用Mybatis来生成模板*/
-package com.itheima;
+@TableName("sys_user")
+public class User {
+    private Long id;
+    private String name;
+    private Integer age;
+    private String email;
+}
+```
 
-import com.baomidou.mybatisplus.annotation.IdType;
+| 属性             | 类型     | 必须指定 | 默认值 | 描述                                                         |
+| ---------------- | -------- | -------- | ------ | ------------------------------------------------------------ |
+| `value`          | String   | 否       | ""     | 表名                                                         |
+| `schema`         | String   | 否       | ""     | schema                                                       |
+| keepGlobalPrefix | boolean  | 否       | false  | 是否保持使用全局的 tablePrefix 的值（当全局 tablePrefix 生效时） |
+| resultMap        | String   | 否       | ""     | xml 中 resultMap 的 id（用于满足特定类型的实体类对象绑定）   |
+| autoResultMap    | boolean  | 否       | false  | 是否自动构建 resultMap 并使用（如果设置 resultMap 则不会进行 resultMap 的自动构建与注入） |
+| excludeProperty  | String[] | 否       | {}     | 需要排除的属性名 @since 3.3.1                                |
+
+##### @TableId
+
+- 描述：主键注解
+- 使用位置：实体类主键字段
+
+| 属性  | 类型   | 必须指定 | 默认值      | 描述         |
+| ----- | ------ | -------- | ----------- | ------------ |
+| value | String | 否       | ""          | 主键字段名   |
+| type  | Enum   | 否       | IdType.NONE | 指定主键类型 |
+
+```java
+@TableName("sys_user")
+public class User {
+    @TableId(value = "id", type = IdType.AUTO)
+    private Long id;
+    private String name;
+    private Integer age;
+    private String email;
+}
+```
+
+IdType
+
+| 值          | 描述                                                         |
+| ----------- | ------------------------------------------------------------ |
+| AUTO        | 数据库 ID 自增                                               |
+| NONE        | 无状态，该类型为未设置主键类型（注解里等于跟随全局，全局里约等于 INPUT） |
+| INPUT       | insert 前自行 set 主键值                                     |
+| ASSIGN_ID   | 分配 ID(主键类型为 Number(Long 和 Integer)或 String)(since 3.3.0),使用接口`IdentifierGenerator`的方法`nextId`(默认实现类为`DefaultIdentifierGenerator`雪花算法) |
+| ASSIGN_UUID | 分配 UUID,主键类型为 String(since 3.3.0),使用接口`IdentifierGenerator`的方法`nextUUID`(默认 default 方法) |
+
+##### [@TableField](https://github.com/baomidou/mybatis-plus/blob/3.0/mybatis-plus-annotation/src/main/java/com/baomidou/mybatisplus/annotation/TableField.java)
+
+- 描述：字段注解（非主键）
+
+```java
+@TableName("sys_user")
+public class User {
+    @TableId
+    private Long id;
+    @TableField("nickname")
+    private String name;
+    private Integer age;
+    private String email;
+}
+```
+
+| 属性             | 类型                         | 必须指定 | 默认值                   | 描述                                                         |
+| ---------------- | ---------------------------- | -------- | ------------------------ | ------------------------------------------------------------ |
+| `value`          | String                       | 否       | ""                       | 数据库字段名                                                 |
+| `exist`          | boolean                      | 否       | true                     | 是否为数据库表字段                                           |
+| `condition`      | String                       | 否       | ""                       | 字段 `where` 实体查询比较条件，有值设置则按设置的值为准，没有则为默认全局的 `%s=#{%s}`，[参考(opens new window)](https://github.com/baomidou/mybatis-plus/blob/3.0/mybatis-plus-annotation/src/main/java/com/baomidou/mybatisplus/annotation/SqlCondition.java) |
+| `update`         | String                       | 否       | ""                       | 字段 `update set` 部分注入，例如：当在version字段上注解`update="%s+1"` 表示更新时会 `set version=version+1` （该属性优先级高于 `el` 属性） |
+| insertStrategy   | Enum                         | 否       | FieldStrategy.DEFAULT    | 举例：NOT_NULL `insert into table_a(<if test="columnProperty != null">column</if>) values (<if test="columnProperty != null">#{columnProperty}</if>)` |
+| updateStrategy   | Enum                         | 否       | FieldStrategy.DEFAULT    | 举例：IGNORED `update table_a set column=#{columnProperty}`  |
+| whereStrategy    | Enum                         | 否       | FieldStrategy.DEFAULT    | 举例：NOT_EMPTY `where <if test="columnProperty != null and columnProperty!=''">column=#{columnProperty}</if>` |
+| fill             | Enum                         | 否       | FieldFill.DEFAULT        | 字段自动填充策略                                             |
+| select           | boolean                      | 否       | true                     | 是否进行 select 查询                                         |
+| keepGlobalFormat | boolean                      | 否       | false                    | 是否保持使用全局的 format 进行处理                           |
+| jdbcType         | JdbcType                     | 否       | JdbcType.UNDEFINED       | JDBC 类型 (该默认值不代表会按照该值生效)                     |
+| typeHandler      | Class<? extends TypeHandler> | 否       | UnknownTypeHandler.class | 类型处理器 (该默认值不代表会按照该值生效)                    |
+| `numericScale`   | String                       | 否       | ""                       | 指定小数点后保留的位数                                       |
+
+##### [@TableLogic](https://github.com/baomidou/mybatis-plus/blob/3.0/mybatis-plus-annotation/src/main/java/com/baomidou/mybatisplus/annotation/TableLogic.java)
+
+- 描述：表字段逻辑处理注解（逻辑删除）
+
+| 属性   | 类型   | 必须指定 | 默认值 | 描述         |
+| ------ | ------ | -------- | ------ | ------------ |
+| value  | String | 否       | ""     | 逻辑未删除值 |
+| delval | String | 否       | ""     | 逻辑删除值   |
+
+#### 代码生成器
+
+##### 3.5.1（新）
+
+```xml
+<dependency>
+    <groupId>com.baomidou</groupId>
+    <artifactId>mybatis-plus-boot-starter</artifactId>
+    <version>3.5.3.1</version>
+</dependency>
+
+<dependency>
+    <groupId>com.baomidou</groupId>
+    <artifactId>mybatis-plus-generator</artifactId>
+    <version>最新版本</version>
+</dependency>
+
+ <dependency>
+     <groupId>org.springframework.boot</groupId>
+     <artifactId>spring-boot-starter-freemarker</artifactId>
+</dependency>
+
+<dependency>
+    <groupId>com.mysql</groupId>
+    <artifactId>mysql-connector-j</artifactId>
+</dependency>
+
+<dependency>
+    <groupId>com.alibaba</groupId>
+    <artifactId>druid-spring-boot-starter</artifactId>
+    <version>1.2.16</version>
+</dependency>
+```
+
+```java
+package com.mybatis;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.generator.FastAutoGenerator;
+import com.baomidou.mybatisplus.generator.config.OutputFile;
+import com.baomidou.mybatisplus.generator.config.rules.NamingStrategy;
+import com.baomidou.mybatisplus.generator.engine.FreemarkerTemplateEngine;
+
+import javax.naming.spi.NamingManager;
+import java.util.Collections;
+
+
+public class MybatisPlusGenerator {
+    public static void main(String[] args) {
+        create();
+    }
+
+    public static void create() {
+        //1.获取代码生成器对象
+        FastAutoGenerator
+                //2.数据库相关配置
+                .create(
+                        "jdbc:mysql://localhost:3306/sg_blog?characterEncoding=utf8&useSSL=false&serverTimezone=UTC&rewriteBatchedStatements=true&nullCatalogMeansCurrent=true",
+                        "2120400146",
+                        "210019")
+                //3.全局配置
+                .globalConfig(builder -> {
+
+                    builder
+                            // 设置作者
+                            .author("baomidou")
+                            // 开启 swagger 模式
+                            .enableSwagger()
+                            // 覆盖已生成文件
+                            .fileOverride()
+                            // 指定输出目录
+                            .outputDir(System.getProperty("user.dir") + "/mybatisplus_05_HighVersion/src/main/java/")
+                            .commentDate("yyyy-MM-dd");
+                })
+                //4.包设置
+                .packageConfig(builder -> {
+                    builder
+                            //设置包名
+                            .parent("com.mybatis")
+                            //实体类包名
+                            .entity("pojo")
+                            //服务层包名
+                            .service("service")
+                            //服务层实现类名
+                            .serviceImpl("service.serviceImpl")
+                            //controller
+                            .controller("controller")
+                            //mapper
+                            .mapper("mapper")
+                            //mapper sql.xml
+                            .xml("mapper")
+                            // 设置mapperXml生成路径
+                            .pathInfo(Collections.singletonMap(OutputFile.xml, System.getProperty("user.dir") + "/mybatisplus_05_HighVersion/src/main/resources/"));
+                })
+                //5.策略设置
+                .strategyConfig(builder -> {
+                    builder
+                            //设置需要生成的表名
+                            .addInclude("sg_link", "sg_tag")
+                            // 设置过滤表前缀
+                            .addTablePrefix("sg_")
+
+                            .serviceBuilder()
+                            .formatServiceFileName("%sService")
+                            .formatServiceImplFileName("%sServiceImpl")
+
+                            .entityBuilder()
+                            //开启lombok
+                            .enableLombok()
+                            //逻辑删除
+                            .logicDeleteColumnName("delFlag")
+                            .enableTableFieldAnnotation()
+                            .naming(NamingStrategy.underline_to_camel)
+                            .columnNaming(NamingStrategy.underline_to_camel)
+
+                            .controllerBuilder()
+                            .formatFileName("%sController")
+                            //开启RestController
+                            .enableRestStyle()
+
+
+                            .mapperBuilder()
+                            //继承哪个父类
+                            .superClass(BaseMapper.class)
+                            .formatMapperFileName("%sMapper")
+                            //@Mapper
+                            .enableMapperAnnotation()
+                            .formatXmlFileName("%sMapper");
+
+
+                })
+                .templateEngine(new FreemarkerTemplateEngine()) // 使用Freemarker引擎模板，默认的是Velocity引擎模板
+                .execute();
+    }
+}
+```
+
+##### 旧
+
+```java
 import com.baomidou.mybatisplus.generator.AutoGenerator;
 import com.baomidou.mybatisplus.generator.config.DataSourceConfig;
 import com.baomidou.mybatisplus.generator.config.GlobalConfig;
 import com.baomidou.mybatisplus.generator.config.PackageConfig;
 import com.baomidou.mybatisplus.generator.config.StrategyConfig;
+import com.baomidou.mybatisplus.generator.config.rules.NamingStrategy;
 
 public class CodeGenerator {
     public static void main(String[] args) {
         //1.获取代码生成器的对象
         AutoGenerator autoGenerator = new AutoGenerator();
 
-        //设置数据库相关配置
+        //2.设置数据库相关配置
         DataSourceConfig dataSource = new DataSourceConfig();
         dataSource.setDriverName("com.mysql.cj.jdbc.Driver");
-        dataSource.setUrl("jdbc:mysql://localhost:3306/mybatis?characterEncoding=utf8&useSSL=false&serverTimezone=UTC&rewriteBatchedStatements=true&nullCatalogMeansCurrent=true");
-        dataSource.setUsername("root");
-        dataSource.setPassword("1234567890Qq");
+        dataSource.setUrl("jdbc:mysql://localhost:3306/sg_blog?characterEncoding=utf8&useSSL=false&serverTimezone=UTC&rewriteBatchedStatements=true&nullCatalogMeansCurrent=true");
+        dataSource.setUsername("2120400146");
+        dataSource.setPassword("210019");
         autoGenerator.setDataSource(dataSource);
 
-        //设置全局配置
-        GlobalConfig globalConfig = new GlobalConfig();
-        globalConfig.setOutputDir(System.getProperty("user.dir")+"/springboot_01_06_ssmp/src/main/java");    //设置代码生成位置
+        //3.设置全局配置
+        com.baomidou.mybatisplus.generator.config.GlobalConfig globalConfig = new GlobalConfig();
+        globalConfig.setOutputDir(System.getProperty("user.dir")+"/sangeng-framework/src/main/java/");    //设置代码生成位置
         globalConfig.setOpen(false);    //设置生成完毕后是否打开生成代码所在的目录
         globalConfig.setAuthor("lpl");    //设置作者
         globalConfig.setFileOverride(true);     //设置是否覆盖原始生成的文件
         globalConfig.setMapperName("%sMapper");    //设置数据层接口名，%s为占位符，指代模块名称
-        globalConfig.setIdType(IdType.AUTO);   //设置Id生成策略
+//        globalConfig.setIdType(IdType.AUTO);   //设置Id生成策略
         autoGenerator.setGlobalConfig(globalConfig);
 
-        //设置包名相关配置
+
+        //4.设置包名相关配置
         PackageConfig packageInfo = new PackageConfig();
-        packageInfo.setParent("com.itheima");   //设置生成的包名，与代码所在位置不冲突，二者叠加组成完整路径
-        packageInfo.setEntity("pojo");    //设置实体类包名
+        packageInfo.setParent("com.sangeng");   //设置生成的包名，与代码所在位置不冲突，二者叠加组成完整路径
+        packageInfo.setEntity("pojo.entity");    //设置实体类包名
         packageInfo.setMapper("mapper");   //设置数据层包名
         autoGenerator.setPackageInfo(packageInfo);
 
-        //策略设置
+        //5.策略设置
         StrategyConfig strategyConfig = new StrategyConfig();
-        strategyConfig.setInclude("tbl_book");  //设置当前参与生成的表名，参数为可变参数
-        strategyConfig.setTablePrefix("tbl_");  //设置数据库表的前缀名称，模块名 = 数据库表名 - 前缀名  例如： User = tbl_user - tbl_
+        strategyConfig.setInclude("sys_user_role");  //设置当前参与生成的表名，参数为可变参数
+        strategyConfig.setTablePrefix("sys_");  //设置数据库表的前缀名称，模块名 = 数据库表名 - 前缀名  例如： User = tbl_user - tbl_
         strategyConfig.setRestControllerStyle(true);    //设置是否启用Rest风格
 //        strategyConfig.setVersionFieldName("version");  //设置乐观锁字段名
 //        strategyConfig.setLogicDeleteFieldName("deleted");  //设置逻辑删除字段名
+        strategyConfig.setNaming(NamingStrategy.underline_to_camel);
+        strategyConfig.setColumnNaming(NamingStrategy.underline_to_camel);
         strategyConfig.setEntityLombokModel(true);  //设置是否启用lombok
         autoGenerator.setStrategy(strategyConfig);
-        //2.执行生成操作
+
+        //6.执行生成操作
         autoGenerator.execute();
+
+
     }
 }
+
 ```
+
+#### [CRUD 接口](https://www.baomidou.com/pages/49cc81/)
+
+##### Service
+
+- save
+
+  ```java
+  // 插入一条记录（选择字段，策略插入
+  boolean save(T entity);
+  // 插入（批量）
+  boolean saveBatch(Collection<T> entityList);
+  // 插入（批量）
+  boolean saveBatch(Collection<T> entityList, int batchSize);
+  ```
+
+- saveOrUpdate
+
+  ```java
+  // TableId 注解存在更新记录，否插入一条记录
+  boolean saveOrUpdate(T entity);
+  // 根据updateWrapper尝试更新，否继续执行saveOrUpdate(T)方法
+  boolean saveOrUpdate(T entity, Wrapper<T> updateWrapper);
+  // 批量修改插入
+  boolean saveOrUpdateBatch(Collection<T> entityList);
+  // 批量修改插入
+  boolean saveOrUpdateBatch(Collection<T> entityList, int batchSize);
+  ```
+
+- remove
+
+  ```java
+  // 根据 queryWrapper 设置的条件，删除记录
+  boolean remove(Wrapper<T> queryWrapper);
+  // 根据 ID 删除
+  boolean removeById(Serializable id);
+  // 根据 columnMap 条件，删除记录
+  boolean removeByMap(Map<String, Object> columnMap);
+  // 删除（根据ID 批量删除）
+  boolean removeByIds(Collection<? extends Serializable> idList);
+  ```
+
+- update
+
+  ```java
+  // 根据 UpdateWrapper 条件，更新记录 需要设置sqlset
+  boolean update(Wrapper<T> updateWrapper);
+  // 根据 whereWrapper 条件，更新记录
+  boolean update(T updateEntity, Wrapper<T> whereWrapper);
+  // 根据 ID 选择修改
+  boolean updateById(T entity);
+  // 根据ID 批量更新
+  boolean updateBatchById(Collection<T> entityList);
+  // 根据ID 批量更新
+  boolean updateBatchById(Collection<T> entityList, int batchSize);
+  ```
+
+- get
+
+  ```java
+  // 根据 ID 查询
+  T getById(Serializable id);
+  // 根据 Wrapper，查询一条记录。结果集，如果是多个会抛出异常，随机取一条加上限制条件 wrapper.last("LIMIT 1")
+  T getOne(Wrapper<T> queryWrapper);
+  // 根据 Wrapper，查询一条记录
+  T getOne(Wrapper<T> queryWrapper, boolean throwEx);
+  // 根据 Wrapper，查询一条记录
+  Map<String, Object> getMap(Wrapper<T> queryWrapper);
+  // 根据 Wrapper，查询一条记录
+  <V> V getObj(Wrapper<T> queryWrapper, Function<? super Object, V> mapper);
+  ```
+
+- .......
+
+##### Mapper
+
+
+
+
+
+
+
+
+
+---
+
+## SSMP 整合
 
 ### 步骤
 
-> 1. pom.xml               配置起步依赖
-> 2. application.yml    设置数据源，端口，框架技术相关配置等
-> 3. mapper                 继承BaseMapper，设置@Mapper
-> 4. mapper                 测试类
-> 5. service                  调用数据层接口或Mp的接口开发
-> 6. service                  测试类
-> 7. controller             基于Restful开发，使用postman测试
-> 8. 页面                     放在resource目录下的static目录中
+> 1. pom.xml              配置起步依赖
+> 2. application.yml       设置数据源，端口，框架技术相关配置等
+> 3. mapper               继承BaseMapper，设置@Mapper
+> 4. mapper               测试类
+> 5. service              调用数据层接口或Mp的接口开发
+> 6. service              测试类
+> 7. controller           基于Restful开发，使用postman测试
+> 8. 页面                 放在resource目录下的static目录中
 
 
 
@@ -2898,7 +3215,7 @@ http {
 >
 >    ```java
 >    ctx=new AnnotationConfigApplicationContext(.xml)
->                                                                                                                      
+>                                                                                                                               
 >    ctx.registerBean("tom",Cat.class, 构造器参数);
 >    //注册为Bean
 >    ```
@@ -2917,7 +3234,7 @@ http {
 >    //        Map<String, Object> attributes = metadata.getAnnotationAttributes("org.springframework.context.annotation.ComponentScan");
 >    //        System.out.println(attributes);
 >    //        System.out.println("================");
->                                                                                                                      
+>                                                                                                                               
 >            //各种条件的判定，判定完毕后，决定是否装在指定的bean
 >            boolean flag = metadata.hasAnnotation("org.springframework.context.annotation.Configuration");
 >            if(flag){
@@ -2926,7 +3243,7 @@ http {
 >            return new String[]{"com.itheima.bean.Cat"};
 >        }
 >    }
->                                                                                                                      
+>                                                                                                                               
 >    ```
 
 
@@ -2938,12 +3255,12 @@ http {
 >        @Override
 >        public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
 >            //1.使用元数据去做判定
->                                                                                                                      
+>                                                                                                                               
 >            BeanDefinition beanDefinition = BeanDefinitionBuilder.rootBeanDefinition(BookServiceImpl2.class).getBeanDefinition();
 >            registry.registerBeanDefinition("bookService",beanDefinition);
 >        }
 >    }
->                                                                                                                      
+>                                                                                                                               
 >    ```
 
 
@@ -2957,13 +3274,13 @@ http {
 >            BeanDefinition beanDefinition = BeanDefinitionBuilder.rootBeanDefinition(BookServiceImpl4.class).getBeanDefinition();
 >            registry.registerBeanDefinition("bookService",beanDefinition);
 >        }
->                                                                                                                   
+>                                                                                                                            
 >        @Override
 >        public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
->                                                                                                                   
+>                                                                                                                            
 >        }
 >    }
->                                                                                                                   
+>                                                                                                                            
 >    ```
 
 ### Bean加载控制
