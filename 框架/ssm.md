@@ -4,26 +4,168 @@
 
 ### mybatis-config.xml
 
-```xml
-<?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE configuration
-        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
-        "http://mybatis.org/dtd/mybatis-3-config.dtd">
-<configuration>
+- configuration（配置）
+
+  - [properties（属性）](https://mybatis.org/mybatis-3/zh/configuration.html#properties)
+
+    ```properties
+    jdbc.driver=com.mysql.cj.jdbc.Driver
+    jdbc.url=jdbc:mysql://localhost:3306/ssm?serverTimezone=UTC
+    jdbc.username=root
+    jdbc.password=123456
+    ```
+
+    ```xml-dtd
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <!DOCTYPE configuration
+            PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+            "http://mybatis.org/dtd/mybatis-3-config.dtd">
+    
+    <configuration>
+        <properties resource="jdbc.properties">
+            <property name="username" value="dev_user"/>
+            <property name="password" value="F2Fa3!33TYyg"/>
+        </properties>
+        
+         <environments default="development">
+            <environment id="development">
+                <transactionManager type="JDBC"/>
+                <dataSource type="POOLED">
+                    <property name="driver" value="${jdbc.driver}"/>
+                    <property name="url" value="${jdbc.url}"/>
+                    <property name="username" value="${jdbc.username}"/>
+                    <property name="password" value="${jdbc.password}"/>
+                </dataSource>
+            </environment>
+        </environments>
+    </configuration>
+    ```
+
+    ```java
+    SqlSessionFactory factory = new SqlSessionFactoryBuilder()
+        										.build(reader, props);
+    
+    // ... 或者 ...
+    SqlSessionFactory factory = new SqlSessionFactoryBuilder()
+        										.build(reader, environment, props);
+    ```
+
+    ```xml-dtd
+    <!--可以设置默认值 -->
+    
+    <properties resource="org/mybatis/example/config.properties">
+    	<property name="org.apache.ibatis.parsing.PropertyParser.enable-default-value" 				value="true"/>
+      			 <!-- 启用默认值特性 -->
+    </properties>
+    
+    
+    <dataSource type="POOLED">
+    	<property name="username" 
+    			 value="${username:ut_user}"/>
+    <!-- 如果属性 'username' 没有被配置，'username' 属性的值将为 'ut_user' -->
+    </dataSource>
+    ```
+
+  - [settings（设置）](https://mybatis.org/mybatis-3/zh/configuration.html#settings)(**默认值**)
+
+    ```xml-dtd
+    <settings>
+    
+      <setting name="lazyLoadingEnabled" value="false"/>
+      <!--延迟加载的全局开关。当开启时，所有关联对象都会延迟加载。 特定关联关系中可通过       设置 fetchType 属性来覆盖该项的开关状态。-->
+      
+      <setting name="aggressiveLazyLoading" value="false"/>
+      <!--开启时，任一方法的调用都会加载该对象的所有延迟加载属性。 否则，每个延迟加载属       性会按需加载（参考 lazyLoadTriggerMethods)。-->
+    
+      <setting name="defaultStatementTimeout" value="未设置(null)"/>
+      <!--设置超时时间，它决定数据库驱动等待数据库响应的秒数。--> 
+    </settings>
+    ```
+
+  - [typeAliases（类型别名）](https://mybatis.org/mybatis-3/zh/configuration.html#typeAliases)
+
+    ```xml-dtd
     <!--类型别名 对应Mapper.xml的resultType-->
     <typeAliases>
+    	<!--会在包名下面搜索需要的pojo-->
         <package name="com.atguigu.mybatis.pojo"/>
+        <!--设置具体的类-->
+        <typeAlias alias="Author" type="domain.blog.Author"/>
     </typeAliases>
+    ```
 
-    <settings>
-    <!--将下划线映射为驼峰-->
-    <setting name="mapUnderscoreToCamelCase" value="true"/>
-    </settings>
-
+    ```java
+    //设置别名
+    @Alias("author")
+    public class Author {
+        ...
+    }
+    
+  
+  //sql.xml resultType 不区分大小写
+    ```xml
+  
+  - [typeHandlers（类型处理器）](https://mybatis.org/mybatis-3/zh/configuration.html#typeHandlers)
+  
+  - [objectFactory（对象工厂）](https://mybatis.org/mybatis-3/zh/configuration.html#objectFactory)
+  
+  - [plugins（插件）](https://mybatis.org/mybatis-3/zh/configuration.html#plugins)
+  
+    ```xml
     <plugins>
-        <!--设置分页插件-->
-        <plugin interceptor="com.github.pagehelper.PageInterceptor"></plugin>
+            <!--设置分页插件-->
+            <plugin interceptor="com.github.pagehelper.PageInterceptor"></plugin>
     </plugins>
+    ```
+  
+    ```java
+    package com.itheima.config;
+    
+    import com.alibaba.druid.pool.DruidDataSource;
+    import com.github.pagehelper.PageInterceptor;
+    import org.mybatis.spring.SqlSessionFactoryBean;
+    import org.mybatis.spring.mapper.MapperScannerConfigurer;
+    import org.springframework.context.annotation.Bean;
+    import org.springframework.context.annotation.ImportResource;
+    
+    import java.util.Properties;
+    
+    
+    @ImportResource("mybatis-config.xml")
+    public class MybatisConfig {
+    
+    
+        @Bean
+        public SqlSessionFactoryBean sqlSessionFactory(DruidDataSource dataSource) {
+            SqlSessionFactoryBean sqlSessionFactoryBean = new SqlSessionFactoryBean();
+            sqlSessionFactoryBean.setDataSource(dataSource);
+            sqlSessionFactoryBean.setTypeAliasesPackage("com.itheima.pojo");
+    
+            PageInterceptor pageInterceptor = new PageInterceptor();
+            Properties properties = new Properties();
+            properties.setProperty("dialect","com.github.pagehelper.PageHelper");
+            pageInterceptor.setProperties(properties);
+            sqlSessionFactoryBean.setPlugins(pageInterceptor);
+            return sqlSessionFactoryBean;
+        }
+    
+        @Bean
+        public MapperScannerConfigurer mapperScannerConfigurer() {
+            MapperScannerConfigurer mapperScannerConfigurer = new MapperScannerConfigurer();
+            mapperScannerConfigurer.setBasePackage("com.itheima.mapper");
+            return mapperScannerConfigurer;
+        }
+    
+    }
+    ```
+  
+  - environments（环境配置）
+  
+    - environment（环境变量）
+      - transactionManager（事务管理器）
+      - dataSource（数据源）
+  
+    ```xml
     <!---
     environments：配置数据库连接环境信息。可以配置多个environment，通过default属性切换不同的environment
     -->
@@ -39,16 +181,17 @@
                 <property name="password" value="210019"/>
             </dataSource>
         </environment>
-
+    
     </environments>
+    ```
+  
+  - [databaseIdProvider（数据库厂商标识）](https://mybatis.org/mybatis-3/zh/configuration.html#databaseIdProvider)
+  - [mappers（映射器）](https://mybatis.org/mybatis-3/zh/configuration.html#mappers)
 
-
-    <mappers>
+```xml
+ <mappers>
         <package name="com.atguigu.mybatis.mapper"/>
-    </mappers>
-
-
-</configuration>
+ </mappers>
 ```
 
 ### pom.xml
@@ -137,6 +280,8 @@ public class SqlSessionFactoryUtils {
             String resource = "mybatis-config.xml";
             InputStream inputStream = Resources.getResourceAsStream(resource);
             sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
+          
+        
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -146,6 +291,7 @@ public class SqlSessionFactoryUtils {
     public static SqlSessionFactory getSqlSessionFactory(){
         return sqlSessionFactory;
     }
+        
 }
 
 ```
@@ -319,30 +465,98 @@ public class SqlSessionFactoryUtils {
 </select>
 ```
 
-#### insert
+```xml
+<select id="selectPerson" parameterType="int" resultType="hashmap">
+  SELECT * FROM PERSON WHERE ID = #{id}
+</select>
 
-```java
-@Update("insert into bangumi(name, type, time, status, year, picture, userId) VALUES (#{anime.name},#{anime.type},#{anime.time},#{anime.status},#{anime.year},#{anime.picture},#{anime.userId})")
-void addBangumi(@Param("anime") Bangumi anime);
+<select
+  id="selectPerson"                      
+  parameterType="int"                 	
+  resultType="hashmap"
+  resultMap="personResultMap"
+  flushCache="false"
+  useCache="true"
+  timeout="10"
+  fetchSize="256"
+  statementType="PREPARED"
+  resultSetType="FORWARD_ONLY">
 ```
 
-#### update
+```properties
+#常用
+id:在命名空间中唯一的标识符，可以被用来引用这条语句
+parameterType:将会传入这条语句的参数的类全限定名或别名。这个属性是可选的，因为 MyBatis 可以根据语句中实际传入的参数计算出应该使用的类型处理器（TypeHandler），默认值为未设置（unset）。 
+resultType:期望从这条语句中返回结果的类全限定名或别名。 注意，如果返回的是集合，那应该设置为集合包含的类型，而不是集合本身的类型。 resultType 和 resultMap 之间只能同时使用一个。
+resultMap:对外部 resultMap 的命名引用。结果映射是 MyBatis 最强大的特性，如果你对其理解透彻，许多复杂的映射问题都能迎刃而解。 resultType 和 resultMap 之间只能同时使用一个。
 
-```java
-@Update("update anime_library.bangumi set `name`=#{anime.name}, type=#{anime.type} , time=#{anime.time} , `status`=#{anime.status} , `year`=#{anime.year} , picture=#{anime.picture}  where id=#{anime.id}")
-void update(@Param("anime") Bangumi anime);
+#不常用
+flushCache:将其设置为 true 后，只要语句被调用，都会导致本地缓存和二级缓存被清空，默认值：false。
+useCache:将其设置为 true 后，将会导致本条语句的结果被二级缓存缓存起来，默认值：对 select 元素为 true。
+timeout:这个设置是在抛出异常之前，驱动程序等待数据库返回请求结果的秒数。默认值为未设置（unset）（依赖数据库驱动）。
+fetchSize:这是一个给驱动的建议值，尝试让驱动程序每次批量返回的结果行数等于这个设置值。 默认值为未设置（unset）（依赖驱动）。
+statementType:可选 STATEMENT，PREPARED 或 CALLABLE。这会让 MyBatis 分别使用 Statement，PreparedStatement 或 CallableStatement，默认值：PREPARED。
+resultSetType:FORWARD_ONLY，SCROLL_SENSITIVE, SCROLL_INSENSITIVE 或 DEFAULT（等价于 unset） 中的一个，默认值为 unset （依赖数据库驱动）。
+databaseId:如果配置了数据库厂商标识（databaseIdProvider），MyBatis 会加载所有不带 databaseId 或匹配当前 databaseId 的语句；如果带和不带的语句都有，则不带的会被忽略。
+resultOrdered:这个设置仅针对嵌套结果 select 语句：如果为 true，则假设结果集以正确顺序（排序后）执行映射，当返回新的主结果行时，将不再发生对以前结果行的引用。 这样可以减少内存消耗。默认值：false。
+resultSets:这个设置仅适用于多结果集的情况。它将列出语句执行后返回的结果集并赋予每个结果集一个名称，多个名称之间以逗号分隔。
+affectData:Set this to true when writing a INSERT, UPDATE or DELETE statement that returns data so that the transaction is controlled properly. Also see Transaction Control Method. Default: false (since 3.5.12)
 ```
 
-#### delete
+#### insert, update 和 delete
 
 ```xml
-<delete id="deleteByIds">
-        delete from anime_library.bangumi where id
-        in
-        <foreach collection="ids" item="id" separator="," open="(" close=")">
-            #{id}
-        </foreach>
-</delete>
+<insert
+  id="insertAuthor"
+  parameterType="domain.blog.Author"
+  flushCache="true"
+  statementType="PREPARED"
+  keyProperty=""
+  keyColumn=""
+  useGeneratedKeys=""
+  timeout="20">
+
+<update
+  id="updateAuthor"
+  parameterType="domain.blog.Author"
+  flushCache="true"
+  statementType="PREPARED"
+  timeout="20">
+
+<delete
+  id="deleteAuthor"
+  parameterType="domain.blog.Author"
+  flushCache="true"
+  statementType="PREPARED"
+  timeout="20">
+    
+ <insert id="insertAuthor" useGeneratedKeys="true"
+    keyProperty="id">
+  insert into Author (username,password,email,bio)
+  values (#{username},#{password},#{email},#{bio})
+</insert>
+```
+
+```properties
+#常用
+id:在命名空间中唯一的标识符，可以被用来引用这条语句。
+
+parameterType:将会传入这条语句的参数的类全限定名或别名。这个属性是可选的，因为 MyBatis 可以根据语句中实际传入的参数计算出应该使用的类型处理器（TypeHandler），默认值为未设置（unset）。
+
+useGeneratedKeys:（仅适用于 insert 和 update）这会令 MyBatis 使用 JDBC 的 getGeneratedKeys 方法来取出由数据库内部生成的主键（比如：像 MySQL 和 SQL Server 这样的关系型数据库管理系统的自动递增字段），默认值：false。
+
+keyProperty:（仅适用于 insert 和 update）指定能够唯一识别对象的属性，MyBatis 会使用 getGeneratedKeys 的返回值或 insert 语句的 selectKey 子元素设置它的值，默认值：未设置（unset）。如果生成列不止一个，可以用逗号分隔多个属性名称
+
+#不常用
+flushCache:将其设置为 true 后，只要语句被调用，都会导致本地缓存和二级缓存被清空，默认值：（对 insert、update 和 delete 语句）true。
+
+timeout:这个设置是在抛出异常之前，驱动程序等待数据库返回请求结果的秒数。默认值为未设置（unset）（依赖数据库驱动）。
+
+statementType:可选 STATEMENT，PREPARED 或 CALLABLE。这会让 MyBatis 分别使用 Statement，PreparedStatement 或 CallableStatement，默认值：PREPARED。
+
+。
+keyColumn:（仅适用于 insert 和 update）设置生成键值在表中的列名，在某些数据库（像 PostgreSQL）中，当主键列不是表中的第一列的时候，是必须设置的。如果生成列不止一个，可以用逗号分隔多个属性名称。
+databaseId:如果配置了数据库厂商标识（databaseIdProvider），MyBatis 会加载所有不带 databaseId 或匹配当前 databaseId 的语句；如果带和不带的语句都有，则不带的会被忽略。
 ```
 
 ---
@@ -448,6 +662,107 @@ List<Emp> emps
                 column="did"
 	</collection>
 ```
+
+### 动态sql
+
+#### if
+
+```xml
+<select id="findActiveBlogWithTitleLike" resultType="Blog">
+  SELECT * FROM BLOG
+  WHERE state = ‘ACTIVE’
+  <if test="title != null">
+    AND title like #{title}
+  </if>
+</select>
+```
+
+#### choose、when、otherwise
+
+```xml
+<select id="findActiveBlogLike"	resultType="Blog">
+  SELECT * FROM BLOG WHERE state = ‘ACTIVE’
+  <choose>
+    <when test="title != null">
+      AND title like #{title}
+    </when>
+    <when test="author != null and author.name != null">
+      AND author_name like #{author.name}
+    </when>
+    <otherwise>
+      AND featured = 1
+    </otherwise>
+  </choose>
+</select>
+```
+
+#### trim、where、set
+
+```xml
+<select id="findActiveBlogLike"	resultType="Blog">
+  SELECT * FROM BLOG
+  <where>
+    <if test="state != null">
+         state = #{state}
+    </if>
+    <if test="title != null">
+        AND title like #{title}
+    </if>
+    <if test="author != null and author.name != null">
+        AND author_name like #{author.name}
+    </if>
+  </where>
+</select>
+```
+
+```xml
+<update id="updateAuthorIfNecessary">
+  update Author
+    <set>
+      <if test="username != null">username=#{username},</if>
+      <if test="password != null">password=#{password},</if>
+      <if test="email != null">email=#{email},</if>
+      <if test="bio != null">bio=#{bio}</if>
+    </set>
+  where id=#{id}
+</update>
+```
+
+#### foreach
+
+```xml
+<delete id="deleteByIds">
+        delete from anime_library.bangumi where id
+        in
+        <foreach collection="ids" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+</delete>
+```
+
+#### script
+
+要在带注解的映射器接口类中使用动态 SQL，可以使用 *script* 元素。比如:
+
+```java
+    @Update({"<script>",
+      "update Author",
+      "  <set>",
+      "    <if test='username != null'>username=#{username},</if>",
+      "    <if test='password != null'>password=#{password},</if>",
+      "    <if test='email != null'>email=#{email},</if>",
+      "    <if test='bio != null'>bio=#{bio}</if>",
+      "  </set>",
+      "where id=#{id}",
+      "</script>"})
+    void updateAuthorValues(Author author);
+```
+
+
+
+
+
+
 
 ---
 
