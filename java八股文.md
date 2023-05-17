@@ -236,18 +236,36 @@ ConcurrentHashMap 在 JDK 1.7 时使用的是数据加链表的形式实现的�
 
 ### Bean
 
+#### Bean生命周期
+
 > bean的生命周期
 
-1. 生产
-   - 扫描bean，用xml，注解扫描等方式找到Bean，存入beanDefinitionMap（Bean定义集合）中
-   - 遍历Bean定义集合，创建bean，createBean()
+```java
+//AbstractApplicationContext.class
+
+ public void refresh() {
+     
+      this.finishBeanFactoryInitialization(beanFactory);
+     //方法里使用getBean()
+ }
+
+//AbstractAutowireCapableBeanFactory.class
+  protected Object doCreateBean(String beanName, RootBeanDefinition mbd, @Nullable Object[] args) {
+      
+      
+  }
+```
+
+1. `生产`
+   - 通过loadBeanDefinitions方法，扫描bean，用xml，注解扫描等方式**找到Bean**，存入beanDefinitionMap（Bean定义集合）中
+   - **遍历Bean定义集合**，创建bean，createBean()
      - **构造对象**，createBeanInstance （），用反射机制获取Bean的Class类的**构造器**，加载方法参数，实例化出一个Bean
-     - **属性填充**，为Bean内部所需的属性进行赋值填充
+     - **属性填充**，为Bean内部所需的属性进行赋值填充，通常就是`@Autowired`注解的这些变量
      - **初始化实例**，initializeBean（）
      - **注册销毁**
    - 放入**单例池**
-2. 使用
-3. 销毁
+2. `使用`
+3. `销毁`
    - 销毁前处理器PostProcessBeforeDestruction，会执行Bean中@PreDestory注解的方法；
 
 ---
@@ -284,9 +302,9 @@ ConcurrentHashMap 在 JDK 1.7 时使用的是数据加链表的形式实现的�
 
 
 
-
-
 ---
+
+#### Bean作用域
 
 > 说说Bean的作用域,以及默认的作用域
 
@@ -303,6 +321,8 @@ Bean单例的,但我们可以通过@Scope注解来修改Bean的作用域。
 ---
 
 ### IOC
+
+#### 什么是IOC
 
 > IOC
 
@@ -326,39 +346,152 @@ BeanFactory以及FactoryBean可以看做是工厂方法模式的实现，BeanFac
 - [二、Spring框架中工厂模式的重要应用](https://blog.csdn.net/weixin_44420511/article/details/125185404#Spring_154)
 - - [1、BeanFactory](https://blog.csdn.net/weixin_44420511/article/details/125185404#1BeanFactory_156)
   - [2、FactoryBean](https://blog.csdn.net/weixin_44420511/article/details/125185404#2FactoryBean_160)
-- [总结](https://blog.csdn.net/weixin_44420511/article/details/125185404#_184)
+- [总结](https://blog.csdn.net/weixin_44420511/article/details/125185404#_18
 
 ---
 
-ioc容器的启动主要在refresh（）实现
+#### IOC执行流程
 
-1. `准备容器`，如设置启动时间，一些状态位
+![image-20230517133834964](picture/image-20230517133834964.png)
 
-2. `创建容器`，**实例化DefaultListaleBeanFactory对象**，解析Bean到成员变量beanDefinitionMap，beanDefinitionNames；
+---
 
-3. `准备Bean工厂`，这是一些BeanFactory的一些属性
+```java
+//AbstractApplicationContext.class 
+public void refresh() {
+     synchronized(this.startupShutdownMonitor) {
+         
+         //1.准备环境
+         this.prepareRefresh();
+         
+         //2.创建容器，实例化DefaultListaleBeanFactory对象，解析Bean到成员变量
+         ConfigurableListableBeanFactory beanFactory = this.obtainFreshBeanFactory();
+         
+         //3.准备Bean工厂，这是一些BeanFactory的一些属性
+         this.prepareBeanFactory(beanFactory);
+         
+         try {
+             
+             //4.Spring提供PostProcessBeanFactory（）方法给我们扩展，可以注册一些特殊的后置处理器
+             this.postProcessBeanFactory(beanFactory);
+             
+             //5.执行BeanFactoryPostProcessor，回调
+             this.invokeBeanFactoryPostProcessors(beanFactory);
+             
+             //6.检索注册并排序Bean后置处理器
+             this.registerBeanPostProcessors(beanFactory);
+             
+             //7.国际化处理
+             this.initMessageSource();
+             //消息广播
+             this.initApplicationEventMulticaster();
+             
+             //8.启动tomcat服务器
+             this.onRefresh();
+             
+             //9.注册监听器
+             this.registerListeners();
+             
+             //10.生产Bean
+             this.finishBeanFactoryInitialization(beanFactory);
 
-4. Spring提供**PostProcessBeanFactory（）**方法给我们扩展，可以**注册**一些特殊的**后置处理器**
+             //11
+             this.finishRefresh();
+             
+             
+         }catch (BeansException var10) {
+             
+         }
+         
+     }
+     
+ }
+```
 
-5. 执行BeanFactoryPostProcessor，回调
+![image-20230517150938055](picture/image-20230517150938055.png)
 
-6. `国际化处理`
+1. `prepareRedresh()`:
 
-7. `初始化监听器`
-
-8. `实例化Bean`，Bean的生命周期在这里开始
-
-   ```properties
-   1.获取之前解析的Bean名称集合
-   2.挨个调用getBean（beanName）
-   3.反射创建Bean
-   4.属性填充
-   5.初始化Bean
-   ```
+   1. 在已有系统环境基础上，**准备**servlet相关的**环境**Environment
 
    
 
-9. `完成上下文的刷新工作`
+2. `obtainFreshBeanFactory()`:
+
+   1. 会通过它的**refreshBeanFactory()**方法重新构造**beanfactory**，
+   2. **加载xml**文件中的<bean id="user" class="User"></bean>**到beanDefinitionMap中**
+
+   
+
+3. `prepareBeanFactory(beanFactory)`:
+
+   1. 主要准备**类加载器**（BeanClassLoder）、**表达式解析器**（BeanExpressionResolver）、**配置文件处理器**（PropertyEditorRegistrar）等系统级处理器、以及**两个Bean后置处理器**用来解析Aware接口的ApplicationContextAwareProcessor、用来处理自定义监听器注册和销毁的ApplicationListenerDetector。
+   2. **注册一些特殊Bean和系统级Bean**，比如容器Beanfactory和ApplicationContext、系统环境Environment、系统属性systemProperties等，将他们放入"特殊对象池"和"单例池中"
+
+
+
+
+4. `postProcessBeanFactory(beanFactory)`：
+   1. 对BeanFatory进行额外设置或修改。主要定义了包括request、session在内的Servlet相关作用域Scopes。同时注册与Servlet相关的一些特殊Bean，包括ServletRequest、ServletResponse、HttpSession等到特殊对象池中
+   2. **注册一些特殊的后置处理器**
+
+5. `invokeBeanFactoryPostProcessors(beanFactory)`:
+   1. **执行注册的BeanFactory后置处理器**BeanFactoryPostPrecessor。
+   2. 其中最重要的就是用来**加载**所有"**Bean定义**"的"**配置处理器**"ConfigurationClassPostProcessor，通过它**加载所有@Configuration配置类**，
+      1. 同时检索指定的"Bean扫描路径"**componentScans**扫描每个类，将扫描出来的Bean放入BeanDefinitionMap中
+      2. 扫描@Bean，@Import等注解的类与方法到BeanDefinitionMap
+
+
+
+6. `registerBeanPostProcessors(beanFactory)`:检索所有的**Bean后置处理器**，同时根据指定的order为它们排序，放入"后置处理器"beanPostProcessors中，每个Bean后置处理器会在Bean初始化之前和之后分别执行对应的逻辑。
+
+   ```java
+   public class MyBeanPostProcessor implements BeanPostProcessor {
+       @Override
+       public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+           //此方法在bean的生命周期初始化之前执行
+           System.out.println("MyBeanPostProcessor-->后置处理器postProcessBeforeInitialization");
+           return bean;
+       }
+   
+       @Override
+       public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+           //此方法在bean的生命周期初始化之后执行
+           System.out.println("MyBeanPostProcessor-->后置处理器postProcessAfterInitialization");
+           return bean;
+       }
+   }
+   ```
+
+
+
+7.   `initMessageSource()`:国际化处理"messageSource",可以自定义名为"messageSource"的Bean，结合messages.properties配置文件就可以进行多语言的切换了
+     `initApplicationEventMulticaster()`:"applicationEventMulticaster"的Bean，自定义广播事件，
+
+
+
+8. `onRefresh()`：构造并启动web服务器
+   1. 先查找实现了ServletWebServerFactory这个接口的应用服务器Bean，默认服务器为tomcat
+   2. getWebServer()构造Tomcat对象，通过start（）方法启动
+
+
+
+9. `registerListeners()`:在bean中查找所有的"监听器Bean"，将它们注册到消息广播器applicationEventMulticaster中
+
+
+
+10. `finishBeanFactoryInitialization(beanFactory)`:生产所有的Bean，Bean的生命周期开始
+    1. Bean生成之后会放入"单例池"singletonObjects中
+
+
+
+11. `finishRefresh()`:构造并注册"生命周期管理器"lifecycleProcessor
+    1. 会调用所有实现了"生命周期接口"lifecycle的Bean的start方法，在容器关闭时会调用stop
+    2. 发布容器刷新完成事件
+
+
+
+
 
 > IOC （控制反转）与 DI（依赖注入）
 
@@ -372,13 +505,9 @@ DI
 
 我们只需要通过简单的配置，就获取需要的资源
 
-
-
-
-
-
-
 ### AOP
+
+#### 什么是AOP
 
 > AOP @Aspect
 
@@ -403,6 +532,18 @@ AOP是面向切面编程，它是一种编程思想，它是一种通过预编�
 
 ### MVC
 
+#### 什么是MVC
+
+> 说说自己对于 Spring MVC 了解?
+
+MVC 是模型(Model)、视图(View)、控制器(Controller)的简写，其核心思想是通过将业务逻辑、数据、显示分离来组织代码。
+
+
+
+MVC是一种设计模式，将软件分为三层，分别是模型层，视图层，控制器层。其中模型层代表的是数据，视图层代表的是界面，控制器层代表的是逻辑处理，是连接视图与模型之前的桥梁。降低耦合，便于代码的维护
+
+#### 执行流程
+
 > 介绍一下Spring MVC的执行流程
 
 1. 用户点击某个请求路径，发起一个 HTTP request 请求，该请求会被提交到 DispatcherServlet`前端控制器`；
@@ -424,9 +565,7 @@ AOP是面向切面编程，它是一种编程思想，它是一种通过预编�
 
 ----> 返回`ModelAndView `---->·`ViewResolver`视图解析器---->`渲染返回`
 
->说说你对MVC的理解
-
-MVC是一种设计模式，将软件分为三层，分别是模型层，视图层，控制器层。其中模型层代表的是数据，视图层代表的是界面，控制器层代表的是逻辑处理，是连接视图与模型之前的桥梁。降低耦合，便于代码的维护
+---
 
 ## MyBatis
 
