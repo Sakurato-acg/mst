@@ -1073,6 +1073,12 @@ public void testUserFactoryBean(){
 - @Component，@Controller，@Service，@Repository
 - @Autowired
 
+
+
+#### [Spring IOC 容器源码分析_Javadoop](https://javadoop.com/post/spring-ioc)
+
+
+
 ---
 
 ### AOP
