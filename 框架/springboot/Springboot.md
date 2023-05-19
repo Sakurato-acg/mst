@@ -1201,6 +1201,7 @@ public class MsgConfig {
 public class WebTest {
     /**
      * 测试不会启动Tomcat
+     @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
      */
     @Test
     void web(){
@@ -1564,6 +1565,13 @@ db.book.find({type:"varchar"})
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-data-mongodb-reactive</artifactId>
 </dependency>
+```
+
+```yaml
+spring:
+  data:
+    mongodb:
+      uri: mongodb://localhost/itheima
 ```
 
 ```java
@@ -2427,7 +2435,6 @@ spring:
     username: 2858534773@qq.com
     password: hvvfypcpvghkdgai
     host: smtp qq.com
-    
 ```
 
 ### 简单邮件
@@ -3094,10 +3101,6 @@ http {
 > }
 > ```
 
-
-
-
-
 ---
 
 ## 验证码
@@ -3215,7 +3218,7 @@ http {
 >
 >    ```java
 >    ctx=new AnnotationConfigApplicationContext(.xml)
->                                                                                                                               
+>                                                                                                                                                             
 >    ctx.registerBean("tom",Cat.class, 构造器参数);
 >    //注册为Bean
 >    ```
@@ -3234,7 +3237,7 @@ http {
 >    //        Map<String, Object> attributes = metadata.getAnnotationAttributes("org.springframework.context.annotation.ComponentScan");
 >    //        System.out.println(attributes);
 >    //        System.out.println("================");
->                                                                                                                               
+>                                                                                                                                                             
 >            //各种条件的判定，判定完毕后，决定是否装在指定的bean
 >            boolean flag = metadata.hasAnnotation("org.springframework.context.annotation.Configuration");
 >            if(flag){
@@ -3243,7 +3246,7 @@ http {
 >            return new String[]{"com.itheima.bean.Cat"};
 >        }
 >    }
->                                                                                                                               
+>                                                                                                                                                             
 >    ```
 
 
@@ -3255,12 +3258,12 @@ http {
 >        @Override
 >        public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
 >            //1.使用元数据去做判定
->                                                                                                                               
+>                                                                                                                                                             
 >            BeanDefinition beanDefinition = BeanDefinitionBuilder.rootBeanDefinition(BookServiceImpl2.class).getBeanDefinition();
 >            registry.registerBeanDefinition("bookService",beanDefinition);
 >        }
 >    }
->                                                                                                                               
+>                                                                                                                                                             
 >    ```
 
 
@@ -3274,13 +3277,13 @@ http {
 >            BeanDefinition beanDefinition = BeanDefinitionBuilder.rootBeanDefinition(BookServiceImpl4.class).getBeanDefinition();
 >            registry.registerBeanDefinition("bookService",beanDefinition);
 >        }
->                                                                                                                            
+>                                                                                                                                                          
 >        @Override
 >        public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
->                                                                                                                            
+>                                                                                                                                                          
 >        }
 >    }
->                                                                                                                            
+>                                                                                                                                                          
 >    ```
 
 ### Bean加载控制
@@ -3778,6 +3781,8 @@ public class UserFilter implements Filter {
 - 功能
   - 数据校验，注解
 
+[SpringBoot校验(validation)+全局处理异常 - 程序员小小宇 - 博客园 (cnblogs.com)](https://www.cnblogs.com/tyux/articles/15858438.html)
+
 ## 配置
 
 ```xml
@@ -3816,7 +3821,9 @@ public class OrderDetailsReqVo {
 
 ## API
 
-```yaml
+![](https://img-blog.csdnimg.cn/20200913110853722.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMzUyNzc3,size_16,color_FFFFFF,t_70)
+
+```properties
 @NotBlank : 不能为null,不能为空字符串
 @NotNull : 不能为null
 @Size(min = 2, max = 14) : 字符串长度位于2到14之间
@@ -3964,7 +3971,128 @@ Spring会为Controller添加一个拦截器, 拦截器叫 : `MethodValidationInt
 > 
 > ```
 >
-> 
+
+---
+
+# 常用注解
+
+## 启动类
+
+1. @SpringBootApplication
+
+   - @Configuration
+   - @EnableAutoConfiguration
+   - @ComponentScan
+2. @MapperScan("com.baomidou.mybatisplus.samples.quickstart.mapper")
+3. @EnableCreateCacheAnnotation
+4. @EnableMethodCache(basePackages = "com.itheima")
+5. @EnableScheduling
+
+## SpringBean
+
+1. @Autowird
+2. @Component、@Repository、@Service、@Controller
+3. @RestController
+4. @Scope
+5. @Configuration
+6. @Import
+7. @EnableConfigurationProperties
+8. @ConditionalOnClass(name = "com.itheima.bean.Wolf")
+9. @ConditionalOnMissingClass("com.itheima.bean.Wolf")
+10. @ConditionalOnBean(name="jerry")
+11. @ConditionalOnMissingClass("com.itheima.bean.Dog")
+12. @ConditionalOnNotWebApplication
+13. @ConditionalOnWebApplication
+
+## 请求与数据,Controller层
+
+1. @RequestMapping
+2. @GetMapping
+3. @PostMapping
+4. @DeleteMapping
+5. @PutMapping
+6. @PathVariable
+7. @RequestParam
+8. @RequestBody
+9. @RestControllerAdvice
+10. @ExceptionHandler
+11. @
+
+## 读取配置信息
+
+1. @Value("${property}")
+2. @ConfigurationProperties(prefix = "")
+
+## 测试
+
+1. @SpringBootTest
+2. @Test
+3. @AutoConfigureMockMvc
+
+## Lombok
+
+1. @Data
+2. @AllArgsConstructor
+3. @NoArgsConstructor
+4. @Slf4j
+5. @Accessors(chain = true)
+6. @EqualsAndHashCode(callSuper = false)
+
+## 数据层相关
+
+1. @Mapper
+2. @Select
+3. @Update
+4. @Delete
+5. @Insert
+6. @TableName
+7. @TableId
+8. @TableField(fill = FieldFill.UPDATE)
+9. @TableLogic
+10. @Transactional
+
+## 缓存
+
+1. @EnableCacheing
+2. @EnableCreateCacheAnnotation
+3. @EnableMethodCache
+4. @Cached(name = "book", key = "#start", expire = 60,cacheType = CacheType.REMOTE) # 方法缓存 
+5. @CacheRefresh(refresh = 1) # 缓存刷新
+6. @CreateCache(area = "default",name = "smsSpace",expire = 60,cacheType = CacheType.LOCAL) #设置缓存变量
+7. @CacheUpdate(name = "smsCache_", key = "#book.id", value = "#book") # 缓存更新
+8. @CacheInvalidate(name = "smsCache_", key = "#id")
+
+## 定时任务
+
+1. @EnableScheduling
+2. @Scheduled(cron = "0/1 * * * * ?")
+
+## admin
+
+1. @EnableAdminServer
+
+
+
+## Validator
+
+1. @NotBlank
+2. @NotNull
+3. @NotEmpty
+4. @Size(min=2,max=4) #字符串
+5. @NotNull + @Min(2) / @Max(5)
+6. @Email
+7. @Range(min=2,max=4)
+8. @validated
+
+## Security
+
+1. @EnableWebSecurity
+2. @EnableGlobalMethodSecurity(prePostEnabled = true)
+
+
+
+
+
 
 ---
 
@@ -4089,4 +4217,6 @@ Spring会为Controller添加一个拦截器, 拦截器叫 : `MethodValidationInt
     
     
     
+    # 泛型
     
+    [java 泛型详解-绝对是对泛型方法讲解最详细的，没有之一 - little fat - 博客园 (cnblogs.com)](https://www.cnblogs.com/coprince/p/8603492.html)
