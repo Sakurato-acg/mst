@@ -175,12 +175,194 @@ ConcurrentHashMap 在 JDK 1.7 时使用的是数据加链表的形式实现的�
 
 ## springboot
 
+### Springboot与Spring
+
+​	从本质上来说，Spring Boot就是Spring，它做了那些没有它你自己也会去做的Spring Bean配置。
+
+​	Spring Boot使用`习惯优于配置`的理念让你的项目快速地运行起来，使用Spring Boot很容易创建一个能独立运行、准生产级别、基于Spring框架的项目，使用Spring Boot你可以不用或者只需要很少的Spring配置。
+
+​	简而言之，Spring Boot本身并不提供Spring的核心功能，而是作为`Spring的脚手架框架`，以达到`快速构建项目`、`预置三方配置`、`开箱即用`的目的。
+
+​	使用过 Spring 的小伙伴，一定有被 XML 配置统治的恐惧。即使 Spring 后面引入了基于注解的配置，我们在开启某些 Spring 特性或者引入第三方依赖的时候，还是需要用 XML 或 Java 进行显式配置。
+
+
+
+### Starter
+
+Spring Boot通过提供众多`起步依赖（Starter）`降低项目依赖的复杂度。起步依赖本质上是一个Maven项目对象模型（Project Object Model, POM），定义了对其他库的传递依赖，这些东西加在一起即支持某项功能。很多起步依赖的命名都暗示了它们提供的某种或某类功能
+
+
+
+### 自动装配
+
+#### 简介与流程概述
+
+使用Spring Boot时，我们只需`引入`对应的`Starters`，Spring Boot启动时便会`自动加载`相关`依赖`，`配置`相应的初始化`参数`，以最快捷、简单的形式对第三方软件进行集成，这便是Spring Boot的自动配置功能。
+
+
+
+整个自动装配的过程是：
+
+1. Spring Boot通过`@EnableAutoConfiguration`注解`开启自动配置`
+
+2. 加载`spring.factories`中注册的各种AutoConfiguration类
+
+3. 当某个`AutoConfiguration类`满足其注解`@Conditional`指定的生效条件（Starters提供的依赖、配置或Spring容器中是否`存在某个Bean`等）时
+
+   实例化该AutoConfiguration类中定义的Bean（组件等），并注入Spring容器，就可以完成依赖框架的自动配置。
+
+----
+
+`@EnableAutoConfiguration` --> `spring.factories` --> `@Conditional` --> `实例化Bean`
+
+
+
+```java
+@SpringBootApplication
+//@SpringBootConfiguration
+//@EnableAutoConfiguration
+//@ComponentScan
+public class SanGengBlobApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(SanGengBlobApplication.class, args);
+    }
+}
+```
+
+```properties
+# Auto Configure
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+com.info.aspect.InfoAspect
+#会加载这个类，成为Bean
+```
+
+```java
+@Aspect
+public class InfoAspect {
+}
+```
+
+```java
+@ComponentScan("com.itheima.bean")
+public class SpringConfig {
+    @Bean
+    @ConditionalOnClass(name="com.mysql.jdbc.Driver")
+    public DruidDataSource dataSource(){
+        return new DruidDataSource();
+    }
+}
+```
+
+#### @SpringBootApplication
+
 > **@SpringBootApplication**
 
-1. 首先启动类使用了`@SpringBootApplication`注解，这个复合注解包括了`@EnableAutoConfiguration` `@SpringBootConfiguration`和`@ComponentScan`三个注解
+1. 首先启动类使用了`@SpringBootApplication`注解，这个复合注解包括了
+
+   1. `@EnableAutoConfiguration` 
+
+   2. `@SpringBootConfiguration`
+
+   3. `@ComponentScan`
+
+      三个注解
+
 2. `@SpringBootConfiguration`是标注当前类是一个**配置类**并**注入**到IOC**容器**中
+
 3. `@ComponentScan`是扫描指定路径下带有特定注解的类到IOC容器中。
+
 4. 最为重要的是`@EnableAutoConfiguration`，它能通过`ImportSelector选择器`将所有带有@Configuration自动导入到容器里。
+
+>  @EnableAutoConfiguration
+
+`EnableAutoConfiguration` 只是一个简单地注解，自动装配核心功能的实现实际是通过 `AutoConfigurationImportSelector`类。
+
+```java
+@Target({ElementType.TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Inherited
+@AutoConfigurationPackage
+@Import({AutoConfigurationImportSelector.class})
+public @interface EnableAutoConfiguration {
+    String ENABLED_OVERRIDE_PROPERTY = "spring.boot.enableautoconfiguration";
+
+    Class<?>[] exclude() default {};
+
+    String[] excludeName() default {};
+}
+```
+
+`AutoConfigurationImportSelector` 类实现了 `ImportSelector`接口，也就实现了这个接口中的 `selectImports`方法，该方法主要用于**获取所有符合条件的类的全限定类名，这些类需要被加载到 ioc 容器中**。
+
+```java
+public class AutoConfigurationImportSelector implements DeferredImportSelector, BeanClassLoaderAware, ResourceLoaderAware, BeanFactoryAware, EnvironmentAware, Ordered {
+   
+    
+    private static final String[] NO_IMPORTS = new String[0];
+    
+    
+     public String[] selectImports(AnnotationMetadata annotationMetadata) {
+         //1.判断自动装配注解 是否开启
+        if (!this.isEnabled(annotationMetadata)) {
+            return NO_IMPORTS;
+        } else {
+            //2.获取所有需要装配的Bean 
+            AutoConfigurationImportSelector.AutoConfigurationEntry autoConfigurationEntry = this.getAutoConfigurationEntry(annotationMetadata);
+            
+            return StringUtils.toStringArray(autoConfigurationEntry.getConfigurations());
+        }
+    }
+    
+}
+```
+
+getAutoConfigurationEntry（）
+
+<img src="https://p6-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/3c1200712655443ca4b38500d615bb70~tplv-k3u1fbpfcp-watermark.image" alt="img" style="zoom: 80%;margin:0;border:3px solid #d63200" />
+
+```java
+private static final AutoConfigurationEntry EMPTY_ENTRY = new AutoConfigurationEntry();
+
+	protected AutoConfigurationEntry getAutoConfigurationEntry(AnnotationMetadata annotationMetadata) {
+		
+        //1.判断自动装配开关是否打开
+        //默认spring.boot.enableautoconfiguration=true
+        //可在 application.properties 或 application.yml 中设置
+        if (!isEnabled(annotationMetadata)) {
+			return EMPTY_ENTRY;
+		}
+        //2.用于获取EnableAutoConfiguration注解中的 exclude 和 excludeName。
+		AnnotationAttributes attributes = getAttributes(annotationMetadata);
+        
+		//3.获取需要自动装配的所有配置类，读取META-INF/spring.factories
+        //不光是这个依赖下的META-INF/spring.factories被读取到，所有 Spring Boot Starter 下的META-	INF/spring.factories都会被读取到。
+         List<String> configurations = getCandidateConfigurations(annotationMetadata, attributes);
+        
+         //4.这一步有经历了一遍筛选，@ConditionalOnXXX 中的所有条件都满足，该类才会生效。
+         //spring.factories中这么多配置，每次启动不需要全部加载
+		configurations = removeDuplicates(configurations);
+		
+         Set<String> exclusions = getExclusions(annotationMetadata, attributes);
+		checkExcludedClasses(configurations, exclusions);
+		configurations.removeAll(exclusions);
+		configurations = getConfigurationClassFilter().filter(configurations);
+		fireAutoConfigurationImportEvents(configurations, exclusions);
+		return new AutoConfigurationEntry(configurations, exclusions);
+	}
+```
+
+![image-20230520150203102](../java框架/picture/image-20230520150203102.png)
+
+> debug分析
+
+<img src="../java框架/picture/image-20230520151229440.png" alt="image-20230520151229440" style="zoom:50%;margin:0;border:3px solid #d63200" />
+
+<img src="../java框架/picture/image-20230520151305552.png" alt="image-20230520151305552" style="zoom:80%;margin:0;border:3px solid #d63200" />
+
+<img src="../java框架/picture/image-20230520151850506.png" alt="image-20230520151850506" style="zoom:80%;margin:0;border:3px solid #d63200" />
+
+### 启动流程
 
 > springboot的启动流程
 
@@ -194,41 +376,140 @@ ConcurrentHashMap 在 JDK 1.7 时使用的是数据加链表的形式实现的�
 8. 加装容器
 ---
 
-1. 注解完成后，通过运行SpringApplication的run方法完成`服务构建`、`环境准备`、`容器创建`、`填充容器`四项工作。
+```java
+SpringApplication.run(启动类.class, args)
+                   ↓
+                   ↓
+public static ConfigurableApplicationContext run(Class<?> primarySource,String[]args){
+    return new SpringApplication(primarySource).run(args);
+}             {1}  ↓                           {2} 
+                   ↓                           
+                   ↓                                                                
+public SpringApplication(Class<?>... primarySources){                                 
+    this(null,primarySources);                                                           
+}     ↓                                                                         
+      ↓
+{1}   ↓
+public SpringApplication(ResourceLoader resourceLoader, Class<?>... primarySources) {
+    //1.1 加载 加载器、主方法类 到内存中
+    this.resourceLoader = resourceLoader;
+    Assert.notNull(primarySources, "PrimarySources must not be null");
+	this.primarySources = new LinkedHashSet<>(Arrays.asList(primarySources));
+		
+                                  
+    //1.2 判断对应的服务类是否存在,来确定web服务的类型,默认是Servlet                 
+	this.webApplicationType = WebApplicationType.deduceFromClasspath();
 
-2. `服务构建`需要在SpringApplication的构造器中完成
+    //1.3   记载初始化类
+    //1.3.1 读取所有spring.factories中的 "注册初始化"、"上下文初始化" 和 "监听器" 这三类配置 
+	this.bootstrapRegistryInitializers = getBootstrapRegistryInitializersFromSpringFactories();             
+	setInitializers((Collection) getSpringFactoriesInstances(ApplicationContextInitializer.class));		
+	setListeners((Collection) getSpringFactoriesInstances(ApplicationListener.class));
+                       
+    //1.4 判断main()方法所在的类,即启动类，加载到SpringApplication中                  
+	this.mainApplicationClass = deduceMainApplicationClass();
+}
+-------------------------------------------------------------------------------------------
+ return new SpringApplication(primarySource).run(args);
+                                              ↓
+                                              ↓                                             {2}                                         ↓
+//环境准备,初始化容器,获取Application对象
+public ConfigurableApplicationContext run(String... args) {
+		long startTime = System.nanoTime();
+                                                  
+         //2.1创建启动上下文BootstrapContext,逐一调用 "注册初始化器" 的 初始化方法
+         //SpringBoot没有默认的 "注册初始器" ,所以默认不执行什么     
+		DefaultBootstrapContext bootstrapContext = createBootstrapContext();
+		ConfigurableApplicationContext context = null;
+                                                  
+         //2.2 将 "java.awt.headless" 设置为 true ,表示缺少显示器、键盘等输入设备也可以正常启动
+		configureHeadlessProperty();
+                                                  
+         //2.3.1 启动 "运行监听器"                                           
+		SpringApplicationRunListeners listeners = getRunListeners(args);
+         //2.3.2 同时发布 "启动事件",它获取并加载spring-boot工程中spring.factories配置文件中的EventPublishingRunListener,
+         //引入准备阶段的8个"监听器"
+		listeners.starting(bootstrapContext, this.mainApplicationClass);
+		try {
+			ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
+            
+             //2.4   组装启动参数
+             //2.4.1 构造一个"可配置环境" ConfigurableEnvironment，根据不同web服务类型构造不同的环境
+             //2.4.2 记载"系统环境变量"systemEnvironment、"jvm系统属性"systemProperties等在内的4组配置信息，加载到propertySources内存集合中，后续使用这些信息就无序加载了。
+             //2.4.3 发布环境准备完成事件，刚加载的8个"监听器"会监听到这个事件，执行相关执行器
+			ConfigurableEnvironment environment = prepareEnvironment(listeners, bootstrapContext, applicationArguments);
+			
+             //2.5.1 表示不加载Bean的元数据信息
+             configureIgnoreBeanInfo(environment);
+             //2.5.2 打印banner图
+			Banner printedBanner = printBanner(environment);
+            
+            
+             //3 容器创建阶段
+            
+             //3.1   创建容器
+             //3.1.2 根据服务类型创建"容器" ConfigurableApplicationContext,默认是servlet，所以创建"注解配置的Servlet-Web服务容器",即AnnotationConfigServletWebServerApplicationContext。
+             //3.1.3 构造（存放和生产我们Bean实例的"Bean工厂"DefaultListableBeanFactory）、（用来解析@Component @ComponentScan等注解的"配置类后处理器"ConfigurationClassPostProcessor）、（用来解析@Autowird、@Value、@Inject等注解的"自动注解Bean后处理器"AutowirdAnnotationBeanPostProcessor等），放入容器
+			context = createApplicationContext();
+			context.setApplicationStartup(this.applicationStartup);
+			
+             //3.2   对容器内的部分属性进行初始化
+             //3.2.1 postProcessApplicationContext()设置"Bean名称生成器"、"资源加载器"、"类型转换器"等
+             //3.2.2 执行准备阶段的"上下文初始化",实现容器id、警告日志处理、日志监听
+             //3.2.3 通过Bean定义加载器将"启动类"在内的资源加载到Bean定义集合中
+             //3.2.4 发布资源加载完成事件
+             prepareContext(bootstrapContext, context, environment, listeners, applicationArguments, printedBanner);
+			
+             
+             //4.  填充容器
+             //4.1 ioc的流程（自动装配 启动tomcat）
+             refreshContext(context);
+		
+           
+			listeners.started(context, timeTakenToStartup);
+			callRunners(context, applicationArguments);
+		}
+		return context;
+	}   
+```
 
-   ①加载资源加载器、主方法类到内存中
+> SpringApplication的`run()`完成`服务构建`、`环境准备`、`容器创建`、`填充容器`四项工作。
 
-   ②判定web应用类型是否存在并默认为servlet
+1. `服务构建`,**组装SpringSpplication** ，需要在`SpringApplication`的构造器中完成
+   1. `加载资源加载器、主方法类到内存中`
+   2. `判定web应用类型`是否存在并默认为servlet
+   3. 确定web服务器后就要`加载初始化类`，这里是通过META-INFO/`spring.factories`来读取**启动注册初始化器**、**应用上下文初始化器**、**应用监听器**三类配置，当然，这里也可以对自定义三类配置
 
-   ③确定web服务器后就要加载初始化类了，这里是通过META-INFO/`spring.factories`来读取**启动注册初始化器**、**应用上下文初始化器**、**应用监听器**三类配置，当然，这里也可以对自定义三类配置
 
-   ④通过运行时栈判断main方法所在的类是否为主启动类
 
-3. 调用run方法进入`环境准备阶段`，主要是对容器和组件做一些前置操作。
+2. 调用run方法进入`环境准备阶段`，主要是对容器和组件做一些前置操作。
+   1. 先`创建一个启动上下文`。并逐一`调用`刚刚加载的**启动注册初始化器的初始化方法	**
+   2. 接下来设置`awt.headLess=true`表示缺少显示器、键盘等设备也可正常启动	
+   3. `获取并启动运行监听器`，同时发布启动事件，获取并加载spring.factories中的事件发布运行监听器，并且会将应用监听器也一并引入，以后想要在启动流程过程中加入自定义逻辑就只需要监听这些事件	
+   4. 通过prepareEnvironment方法`组装启动参数`，根据不同的web构造不同的环境。构造完毕后会加载环境变量、jvm系统属性到属性集合中，后期无需加载。此时可设置启动参数并添加configuration.properties到属性集合中。接下来会发布环境准备完成的事件，一些监听器收到信号会做相应处理。
+   5. 可做**忽略元数据加载**、**打印banner**的操作。
 
-   ①先创建一个启动上下文。并逐一调用刚刚加载的**启动注册初始化器的一个初始化方法	**
 
-   ②接下来设置**awt.headLess=true**表示缺少显示器、键盘等设备也可正常启动	
 
-   ③**启动运行监听器**，同时发布启动事件，获取并加载spring.factories中的事件发布运行监听器，并且会将应用监听器也一并引入，以后想要在启动流程过程中加入自定义逻辑就只需要监听这些事件	
+3. 环境准备好以后，就可以`创建容器`(ApplicationContext)了。
 
-   ④**通过prepareEnvironment方法组装启动参数**，根据不同的web构造不同的环境。构造完毕后会加载环境变量、jvm系统属性到属性集合中，后期无需加载。此时可设置启动参数并添加configuration.properties到属性集合中。接下来会发布环境准备完成的事件，一些监听器收到信号会做相应处理。
+   1. 首先创建注解配置servlet容器，具体行为是创建beanfactory、用来解析一些注解的后置处理器和其他属性对象 
 
-   ⑤可做**忽略元数据加载**、**打印banner**的操作。
+   2. 调用prepareContext方法对`容器中的属性`进行`初始化`
 
-4. 环境准备好以后，就可以`创建容器`了。
+      
 
-   ①首先创建注解配置servlet容器，具体行为是创建beanfactory、用来解析一些注解的后置处理器和其他属性对象 
+4. `填充容器`
 
-   ②调用prepareContext方法对容器中的属性进行初始化
-5. 容器创建完毕后，就会对`容器做初始化`操作。这里会
+   1. 填充Bean，启动tomcat，ioc流程	
 
-      ①创建系统自带的Bean和用户自定义Bean并装配到容器里，通过启动tomcat和经历Bean的生命周期就可以使用一个完整的Bean了	
+   2. 发布启动事件完成的同时，会回调自定义Runner接口来处理定制化需求
 
-      ②发布启动事件完成的同时，会回调自定义Runner接口来处理定制化需求
-          作者：仲夏七月梦 https://www.bilibili.com/read/cv22717345?spm_id_from=333.999.0.0 出处：bilibili
+      
+
+      
+
+      作者：仲夏七月梦 https://www.bilibili.com/read/cv22717345?spm_id_from=333.999.0.0 出处：bilibili
 
 ---
 
@@ -291,7 +572,7 @@ ConcurrentHashMap 在 JDK 1.7 时使用的是数据加链表的形式实现的�
    - **执行Aware接口的方法**，可以通过接口获取BeanName，BeanFactory
    - **执行BeanPostProcessor的前置处理方法**postProcessBeforeInitialization，对Bean进行一些中自定义的前置处理
    - **判断Bean是否实现了InitializingBean接口**，执行InitializationBean的afterPropertiesSet（）初始化方法
-   - **执行用户自定义的初始化方法**，如init-method
+   - **执行用户自定义的初始化方法**，如init-method 
    - **执行BeanPostProcessor的后置处理方法**，postProcessAfterInitialization（）
 
 4. 不需要时销毁
@@ -300,7 +581,7 @@ ConcurrentHashMap 在 JDK 1.7 时使用的是数据加链表的形式实现的�
    - 判断是否实现了**DisposableBean接口**，调用**destory**（）方法
    - 判断是否配置了destroy-method等**自定义的销毁**方法，执行
 
-
+![image-20230520154340964](../java框架/picture/image-20230520154340964.png)
 
 ---
 
