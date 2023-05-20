@@ -3218,7 +3218,7 @@ http {
 >
 >    ```java
 >    ctx=new AnnotationConfigApplicationContext(.xml)
->                                                                                                                                                             
+>                                                                                                                                                                
 >    ctx.registerBean("tom",Cat.class, 构造器参数);
 >    //注册为Bean
 >    ```
@@ -3237,7 +3237,7 @@ http {
 >    //        Map<String, Object> attributes = metadata.getAnnotationAttributes("org.springframework.context.annotation.ComponentScan");
 >    //        System.out.println(attributes);
 >    //        System.out.println("================");
->                                                                                                                                                             
+>                                                                                                                                                                
 >            //各种条件的判定，判定完毕后，决定是否装在指定的bean
 >            boolean flag = metadata.hasAnnotation("org.springframework.context.annotation.Configuration");
 >            if(flag){
@@ -3246,7 +3246,7 @@ http {
 >            return new String[]{"com.itheima.bean.Cat"};
 >        }
 >    }
->                                                                                                                                                             
+>                                                                                                                                                                
 >    ```
 
 
@@ -3258,12 +3258,12 @@ http {
 >        @Override
 >        public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
 >            //1.使用元数据去做判定
->                                                                                                                                                             
+>                                                                                                                                                                
 >            BeanDefinition beanDefinition = BeanDefinitionBuilder.rootBeanDefinition(BookServiceImpl2.class).getBeanDefinition();
 >            registry.registerBeanDefinition("bookService",beanDefinition);
 >        }
 >    }
->                                                                                                                                                             
+>                                                                                                                                                                
 >    ```
 
 
@@ -3277,13 +3277,13 @@ http {
 >            BeanDefinition beanDefinition = BeanDefinitionBuilder.rootBeanDefinition(BookServiceImpl4.class).getBeanDefinition();
 >            registry.registerBeanDefinition("bookService",beanDefinition);
 >        }
->                                                                                                                                                          
+>                                                                                                                                                             
 >        @Override
 >        public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
->                                                                                                                                                          
+>                                                                                                                                                             
 >        }
 >    }
->                                                                                                                                                          
+>                                                                                                                                                             
 >    ```
 
 ### Bean加载控制
@@ -3987,6 +3987,7 @@ Spring会为Controller添加一个拦截器, 拦截器叫 : `MethodValidationInt
 3. @EnableCreateCacheAnnotation
 4. @EnableMethodCache(basePackages = "com.itheima")
 5. @EnableScheduling
+6. @ServletComponentScan // 扫描@Webfilter等组件并注册到容器中
 
 ## SpringBean
 
@@ -3997,12 +3998,16 @@ Spring会为Controller添加一个拦截器, 拦截器叫 : `MethodValidationInt
 5. @Configuration
 6. @Import
 7. @EnableConfigurationProperties
-8. @ConditionalOnClass(name = "com.itheima.bean.Wolf")
+8. @ConditionalOnClass(name="com.mysql.jdbc.Driver")
 9. @ConditionalOnMissingClass("com.itheima.bean.Wolf")
 10. @ConditionalOnBean(name="jerry")
 11. @ConditionalOnMissingClass("com.itheima.bean.Dog")
 12. @ConditionalOnNotWebApplication
 13. @ConditionalOnWebApplication
+14. @primary
+15. @Bean(initMethod = "my_initMethod",destroyMethod = "my_destroyMethod")
+16. @PostConstrust
+17. @PreDestroy
 
 ## 请求与数据,Controller层
 
@@ -4091,7 +4096,41 @@ Spring会为Controller添加一个拦截器, 拦截器叫 : `MethodValidationInt
 
 
 
+# 常用接口
 
+
+
+## Bean
+
+```java
+@Service
+public class Test implements InitializingBean{
+    
+    @Override
+    public void afterPropertiesSet() throws Exception{
+        System.out.println("Bean填充属性后，会执行我");
+    }
+   
+}
+```
+
+```java
+public class MyBeanPostProcessor implements BeanPostProcessor {
+    @Override
+    public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+        //此方法在bean的生命周期初始化之前执行
+        System.out.println("MyBeanPostProcessor-->后置处理器postProcessBeforeInitialization");
+        return bean;
+    }
+
+    @Override
+    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+        //此方法在bean的生命周期初始化之后执行
+        System.out.println("MyBeanPostProcessor-->后置处理器postProcessAfterInitialization");
+        return bean;
+    }
+}
+```
 
 
 ---
