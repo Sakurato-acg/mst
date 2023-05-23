@@ -352,15 +352,15 @@ private static final AutoConfigurationEntry EMPTY_ENTRY = new AutoConfigurationE
 	}
 ```
 
-![image-20230520150203102](../java框架/picture/image-20230520150203102.png)
+![image-20230520150203102](picture/image-20230520150203102.png)
 
 > debug分析
 
-<img src="../java框架/picture/image-20230520151229440.png" alt="image-20230520151229440" style="zoom:50%;margin:0;border:3px solid #d63200" />
+<img src="picture/image-20230520151229440.png" alt="image-20230520151229440" style="zoom:50%;margin:0;border:3px solid #d63200" />
 
-<img src="../java框架/picture/image-20230520151305552.png" alt="image-20230520151305552" style="zoom:80%;margin:0;border:3px solid #d63200" />
+<img src="picture/image-20230520151305552.png" alt="image-20230520151305552" style="zoom:80%;margin:0;border:3px solid #d63200" />
 
-<img src="../java框架/picture/image-20230520151850506.png" alt="image-20230520151850506" style="zoom:80%;margin:0;border:3px solid #d63200" />
+<img src="picture/image-20230520151850506.png" alt="image-20230520151850506" style="zoom:80%;margin:0;border:3px solid #d63200" />
 
 ### 启动流程
 
@@ -400,7 +400,7 @@ public SpringApplication(ResourceLoader resourceLoader, Class<?>... primarySourc
     //1.2 判断对应的服务类是否存在,来确定web服务的类型,默认是Servlet                 
 	this.webApplicationType = WebApplicationType.deduceFromClasspath();
 
-    //1.3   记载初始化类
+    //1.3   加载初始化类
     //1.3.1 读取所有spring.factories中的 "注册初始化"、"上下文初始化" 和 "监听器" 这三类配置 
 	this.bootstrapRegistryInitializers = getBootstrapRegistryInitializersFromSpringFactories();             
 	setInitializers((Collection) getSpringFactoriesInstances(ApplicationContextInitializer.class));		
@@ -561,8 +561,6 @@ public ConfigurableApplicationContext run(String... args) {
 
      - 通过反射机制，使用构造器创建
 
-       
-
 2. **属性填充**，注入这个Bean依赖的其他Bean对象
 
    - 三级缓存，依赖注入
@@ -581,7 +579,7 @@ public ConfigurableApplicationContext run(String... args) {
    - 判断是否实现了**DisposableBean接口**，调用**destory**（）方法
    - 判断是否配置了destroy-method等**自定义的销毁**方法，执行
 
-![image-20230520154340964](../java框架/picture/image-20230520154340964.png)
+![image-20230520154340964](picture/image-20230520154340964.png)
 
 ---
 
