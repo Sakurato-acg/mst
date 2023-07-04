@@ -633,7 +633,7 @@ select e.name, d.name from employee as e inner join dept as d on e.dept = d.id;
 select e.*, d.name from employee as e left outer join dept as d on e.dept = d.id;
 select d.name, e.* from dept d left outer join emp e on e.dept = d.id;  -- 这条语句与下面的语句效果一样
 -- 右
-select d.name, e.* from employee as e right outer join dept as d on e.dept = d.id;
+select d.name, e.* from e right outer join d on e.dept = d.id;
 ```
 
 左连接可以查询到没有dept的employee，右连接可以查询到没有employee的dept
@@ -936,6 +936,10 @@ end;
 
 # 进阶篇
 
+## 体系
+
+![image-20230512164317278](picture/image-20230512164317278.png)
+
 
 ## 存储引擎
 
@@ -1199,7 +1203,7 @@ MySQL 索引数据结构对经典的 B+Tree 进行了优化。在原 B+Tree 的�
 
 #### 面试题
 
-1. 为什么 InnoDB 存储引擎选择使用 B+Tree 索引结构？
+> 为什么 InnoDB 存储引擎选择使用 B+Tree 索引结构？
 
 - 相对于二叉树，层级更少，搜索效率高
 - 对于 B-Tree，无论是叶子节点还是非叶子节点，都会保存数据，这样导致一页中存储的键值减少，指针也跟着减少，要同样保存大量数据，只能增加树的高度，导致性能降低
@@ -1313,15 +1317,37 @@ drop index idx_user_email on tb_user;
 >
 > **与书写顺序无关**
 
+[(26条消息) Mysql最左匹配原则_最左原则a>=1会走索引吗_Summersadness8的博客-CSDN博客](https://blog.csdn.net/sinat_41917109/article/details/88944290)
+
+[全网都在说一个错误的结论 (qq.com)](https://mp.weixin.qq.com/s/8qemhRg5MgXs1So5YCv0fQ)
+
 
 
 #### 索引失效情况
 
+
+
 1. **在索引列上进行运算操作，索引将失效。**如：`explain select * from tb_user where substring(phone, 10, 2) = '15';`
-2. 字符串类型字段使用时，**不加引号**，索引将失效。如：`explain select * from tb_user where phone = 17799990015;`，此处phone的值没有加引号
+
+   
+
+2. 字符串类型字段使用时，**不加引号**，索引将失效。如：`explain select * from tb_user where phone = 17799990015;`
+
+   此处phone的值没有加引号
+
+   
+
 3. 模糊查询中，如果仅仅是尾部模糊匹配，索引不会是失效；如果是**头部模糊匹配**，索引失效。如：`explain select * from tb_user where profession like '%工程';`，**前后都有 % 也会失效**。
+
+   
+
 4. 用 or 分割开的条件，如果 or 其中一个条件的列没有索引，那么涉及的索引都不会被用到。
+
+   
+
 5. 如果 MySQL 评估使用索引比全表更慢，则不使用索引。
+
+   
 
 #### SQL 提示
 
@@ -1627,7 +1653,9 @@ mysql -u username -p password database <backup.sql
 
 ### 逻辑存储结构
 
-![image-20230511192532844](../../../../AppData/Roaming/Typora/typora-user-images/image-20230511192532844.png)
+![image-20230511192532844](picture/image-20230511192532844.png)
+
+![image-20230512162846421](picture/image-20230512162846421.png)
 
 - `TableSpace(表空间)`
 
